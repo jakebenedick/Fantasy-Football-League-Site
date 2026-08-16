@@ -2,7 +2,6 @@ import asyncio
 from datetime import datetime, timezone
 from typing import Any
 
-import nflreadpy as nfl  # type: ignore[import-untyped]
 import polars as pl
 
 from app.domain.models import (
@@ -459,7 +458,18 @@ async def _load_public_data(
     async with _data_lock:
         try:
             if _id_map is None:
-                identifiers = await asyncio.to_thread(nfl.load_ff_playerids)
+                identifiers = await asyncio.to_thread(
+                    pl.read_csv,
+                    "https://github.com/dynastyprocess/data/raw/master/files/"
+                    "db_playerids.csv",
+                    columns=[
+                        "sleeper_id",
+                        "gsis_id",
+                        "name",
+                        "position",
+                        "fantasypros_id",
+                    ],
+                )
                 mapping: dict[str, tuple[str, str, str | None]] = {}
                 for row in identifiers.select(
                     [
@@ -487,7 +497,30 @@ async def _load_public_data(
                         _fantasypros_by_sleeper[sleeper_id] = fantasypros_id
                 _id_map = mapping
             if season not in _stats_by_season:
-                frame = await asyncio.to_thread(nfl.load_player_stats, [season])
+                url = (
+                    "https://github.com/nflverse/nflverse-data/releases/download/"
+                    f"stats_player/stats_player_week_{season}.parquet"
+                )
+                requested_columns = {
+                    "season_type",
+                    "week",
+                    "player_id",
+                    "position",
+                    "game_id",
+                    "target_share",
+                    "air_yards_share",
+                    *(column for column, _ in STAT_RULES.values()),
+                    *(
+                        column
+                        for columns, _ in COMPOSITE_STAT_RULES.values()
+                        for column in columns
+                    ),
+                    *(column for column, _, _ in BONUS_RULES.values()),
+                    *(column for column, _, _, _ in EXTRA_TOTAL_STATS.values()),
+                }
+                schema = await asyncio.to_thread(pl.read_parquet_schema, url)
+                columns = sorted(requested_columns.intersection(schema))
+                frame = await asyncio.to_thread(pl.read_parquet, url, columns=columns)
                 _stats_by_season[season] = frame.to_dicts()
         except Exception as exc:  # nflreadpy wraps several download/parser exception types.
             raise NflverseUnavailableError(
@@ -572,7 +605,24 @@ async def _load_ranking_rows() -> list[dict[str, Any]]:
         if _ranking_rows is not None:
             return _ranking_rows
         try:
-            frame = await asyncio.to_thread(nfl.load_ff_rankings, "draft")
+            frame = await asyncio.to_thread(
+                pl.read_csv,
+                "https://github.com/dynastyprocess/data/raw/master/files/"
+                "db_fpecr_latest.csv",
+                columns=[
+                    "id",
+                    "player",
+                    "pos",
+                    "ecr_type",
+                    "page_type",
+                    "ecr",
+                    "scrape_date",
+                    "best",
+                    "worst",
+                    "sd",
+                    "rank_delta",
+                ],
+            )
             _ranking_rows = frame.to_dicts()
         except Exception:
             # Rankings enrich the experience but must never make historical statistics fail.
@@ -765,6 +815,32 @@ def build_special_team_player_rows(pbp_rows: list[dict[str, Any]]) -> list[dict[
     return list(events.values())
 
 
+def build_defense_rows_from_frame(
+    frame: pl.DataFrame,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Process one game at a time instead of materializing every play as Python dicts."""
+    defense_rows: list[dict[str, Any]] = []
+    special_team_rows: list[dict[str, Any]] = []
+    game_rows: list[dict[str, Any]] = []
+    current_game_id: str | None = None
+
+    def flush() -> None:
+        if not game_rows:
+            return
+        defense_rows.extend(build_defense_game_rows(game_rows))
+        special_team_rows.extend(build_special_team_player_rows(game_rows))
+
+    for row in frame.iter_rows(named=True):
+        game_id = str(row.get("game_id") or "")
+        if current_game_id is not None and game_id != current_game_id:
+            flush()
+            game_rows = []
+        current_game_id = game_id
+        game_rows.append(row)
+    flush()
+    return defense_rows, special_team_rows
+
+
 async def _load_defense_data(season: int) -> list[dict[str, Any]]:
     async with _data_lock:
         try:
@@ -776,11 +852,9 @@ async def _load_defense_data(season: int) -> list[dict[str, Any]]:
                     "posteam",
                     "defteam",
                     "play_type",
-                    "desc",
                     "touchdown",
                     "td_team",
                     "special_teams_play",
-                    "fumble",
                     "fumble_forced",
                     "fumble_lost",
                     "fumble_recovery_1_team",
@@ -813,11 +887,9 @@ async def _load_defense_data(season: int) -> list[dict[str, Any]]:
                     f"pbp/play_by_play_{season}.parquet"
                 )
                 frame = await asyncio.to_thread(pl.read_parquet, url, columns=columns)
-                selected_rows = frame.to_dicts()
-                _defense_rows_by_season[season] = build_defense_game_rows(selected_rows)
-                _special_team_player_rows_by_season[season] = build_special_team_player_rows(
-                    selected_rows
-                )
+                defense_rows, special_team_rows = build_defense_rows_from_frame(frame)
+                _defense_rows_by_season[season] = defense_rows
+                _special_team_player_rows_by_season[season] = special_team_rows
         except Exception as exc:
             raise NflverseUnavailableError(
                 "Public NFL defense data is temporarily unavailable"
@@ -837,7 +909,6 @@ class LeagueScoringAuditService:
             self._client.get_rosters(league_id),
             self._client.get_members(league_id),
         )
-        id_map, all_stats = await _load_public_data(season)
         position_expansions = {
             "FLEX": {"RB", "WR", "TE"},
             "WRRB_FLEX": {"RB", "WR"},
@@ -865,17 +936,22 @@ class LeagueScoringAuditService:
             for key in scoring
             if key not in STAT_RULES and key not in COMPOSITE_STAT_RULES and key not in BONUS_RULES
         )
-        stats_by_player: dict[str, list[dict[str, Any]]] = {}
-        for row in all_stats:
-            if row.get("season_type") != "REG" or (week is not None and row.get("week") != week):
-                continue
-            stats_by_player.setdefault(str(row.get("player_id")), []).append(row)
         nflverse_to_sleeper_team = {"LA": "LAR"}
         defense_by_team: dict[str, list[dict[str, Any]]] = {}
         needs_play_by_play = "DEF" in eligible_positions or bool(
             {"st_ff", "st_fum_rec"}.intersection(scoring)
         )
+        # Load the large, column-pruned play data first. Its temporary frame is
+        # released before the longer-lived player-stat cache is materialized.
         defense_rows = await _load_defense_data(season) if needs_play_by_play else []
+        id_map, all_stats = await _load_public_data(season)
+        stats_by_player: dict[str, list[dict[str, Any]]] = {}
+        for row in all_stats:
+            if row.get("season_type") != "REG" or (
+                week is not None and row.get("week") != week
+            ):
+                continue
+            stats_by_player.setdefault(str(row.get("player_id")), []).append(row)
         if "DEF" in eligible_positions:
             for row in defense_rows:
                 if week is not None and row.get("week") != week:
