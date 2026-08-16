@@ -1,0 +1,22 @@
+.champion-trophy-mini {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  font-size: 0.78em;
+  line-height: 1;
+  vertical-align: 0.08em;
+  filter: drop-shadow(0 1px 1px rgba(90, 61, 0, 0.18));
+  cursor: help;
+}
+
+.standing.winner > div > strong::after,
+.bracket-match.championship .won strong::after {
+  content: "🏆";
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 11px;
+  line-height: 1;
+  vertical-align: 1px;
+  filter: drop-shadow(0 1px 1px rgba(90, 61, 0, 0.16));
+}

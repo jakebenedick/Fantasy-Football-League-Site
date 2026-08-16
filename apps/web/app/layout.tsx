@@ -1,0 +1,21 @@
+import type { Metadata } from "next";
+import "./styles.css";
+import "./context.css";
+import "./trade.css";
+import "./player.css";
+import "./lineage.css";
+import "./board.css";
+import "./round-board.css";
+import "./owner.css";
+import "./league-view.css";
+import "./history.css";
+import "./history-details.css";
+import "./interactive-history.css";
+import "./refinements.css";
+import "./champion.css";
+import "./live-standings.css";
+import "./theme.css";
+import "./privacy.css";
+import "./scoring.css";
+export const metadata: Metadata = { title: "Fantasy Co-Manager" };
+export default function Layout({children}:{children:React.ReactNode}) { return <html lang="en"><body>{children}</body></html>; }

@@ -1,0 +1,129 @@
+.live-standings h2 {
+  margin-bottom: 18px;
+}
+
+.standings-list {
+  display: grid;
+}
+
+.standing-roster-link {
+  display: grid;
+  grid-template-columns: 28px 36px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 57px;
+  padding: 9px 8px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.standing-roster-link:hover {
+  background: var(--cream);
+}
+
+.standing-roster-link:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+.standing-roster-link > b {
+  color: var(--muted);
+  font-size: 10px;
+  text-align: center;
+}
+
+.standing-roster-link > img,
+.standing-roster-link > i {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--green);
+  color: white;
+  object-fit: cover;
+  font-size: 9px;
+  font-style: normal;
+}
+
+.standing-roster-link > span {
+  min-width: 0;
+}
+
+.standings-list strong,
+.standings-list small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.standings-list strong {
+  font-size: 11px;
+}
+
+.standings-list small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.standing-roster-link.standing-podium {
+  margin-top: 7px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+}
+
+.standing-roster-link.standing-podium > b {
+  font-size: 18px;
+}
+
+.standing-roster-link.standing-podium-1 {
+  border-color: #ead58a;
+  background: #fff8d9;
+}
+
+.standing-roster-link.standing-podium-2 {
+  border-color: #d7dadd;
+  background: #f5f6f7;
+}
+
+.standing-roster-link.standing-podium-3 {
+  border-color: #dfb594;
+  background: #fbf0e8;
+}
+
+.trade-partners-wide {
+  margin-top: 22px;
+}
+
+.trade-partners-wide > .pair-list {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.trade-partners-wide .pair-list > article {
+  align-self: start;
+}
+
+.trade-partners-wide .pair-expand {
+  grid-column: 1 / -1;
+}
+
+.trade-partners-wide .pair-history {
+  min-width: 0;
+}
+
+@media (max-width: 850px) {
+  .trade-partners-wide > .pair-list {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}

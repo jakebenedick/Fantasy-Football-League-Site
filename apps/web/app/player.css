@@ -1,0 +1,1 @@
+.position{position:relative;overflow:hidden}.position b{position:relative;z-index:2;font:inherit}.player-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#eef0ed;z-index:3}.player:hover .player-photo{opacity:.18}.player:hover .position b{z-index:4}

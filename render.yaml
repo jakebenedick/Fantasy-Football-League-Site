@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: fourth-down
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    autoDeployTrigger: commit
+    envVars:
+      - key: SLEEPER_BASE_URL
+        value: https://api.sleeper.app/v1
+      - key: SLEEPER_TIMEOUT_SECONDS
+        value: "20"

@@ -1,0 +1,260 @@
+.settings-menu {
+  position: relative;
+}
+
+.settings-menu > summary {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+  transition: border-color 0.16s, background 0.16s;
+}
+
+.settings-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.settings-menu > summary:hover,
+.settings-menu[open] > summary {
+  border-color: #83aa91;
+}
+
+.settings-menu > summary .icon {
+  width: 17px;
+}
+
+.settings-popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 30;
+  width: min(330px, calc(100vw - 28px));
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 18px 46px rgba(15, 28, 20, 0.18);
+}
+
+.settings-heading {
+  display: grid;
+  gap: 3px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.settings-heading span {
+  color: var(--green);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.settings-heading strong {
+  font: 800 20px "Manrope";
+}
+
+.setting-row {
+  display: grid;
+  gap: 13px;
+  padding: 16px 0;
+}
+
+.setting-row > div:first-child strong,
+.setting-row > div:first-child small {
+  display: block;
+}
+
+.setting-row > div:first-child strong {
+  font-size: 12px;
+}
+
+.setting-row > div:first-child small,
+.settings-note {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.theme-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  padding: 4px;
+  border-radius: 10px;
+  background: #eef1eb;
+}
+
+.theme-options button {
+  min-height: 36px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.theme-options button.active {
+  background: white;
+  color: var(--green);
+  box-shadow: 0 2px 7px rgba(20, 37, 25, 0.1);
+}
+
+.settings-note {
+  display: block;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  line-height: 1.45;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #edf5ef;
+  --muted: #9caaa0;
+  --green: #55c993;
+  --lime: #c9f45a;
+  --line: #334139;
+  --card: #18211c;
+  --cream: #0e1511;
+}
+
+html[data-theme="dark"] body,
+html[data-theme="dark"] .app-shell {
+  background: var(--cream);
+  color: var(--ink);
+}
+
+html[data-theme="dark"] .topbar {
+  border-color: var(--line);
+  background: rgba(14, 21, 17, 0.9);
+}
+
+html[data-theme="dark"] .connect-card,
+html[data-theme="dark"] .league-card,
+html[data-theme="dark"] .empty,
+html[data-theme="dark"] .stat-row,
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] .team-tab,
+html[data-theme="dark"] .activity-leader,
+html[data-theme="dark"] .player,
+html[data-theme="dark"] .event-details,
+html[data-theme="dark"] .season-tools button,
+html[data-theme="dark"] .secondary,
+html[data-theme="dark"] .league-image,
+html[data-theme="dark"] .settings-menu > summary,
+html[data-theme="dark"] .settings-popover {
+  background: var(--card);
+  color: var(--ink);
+}
+
+html[data-theme="dark"] .connect-card input,
+html[data-theme="dark"] .connect-card select,
+html[data-theme="dark"] select {
+  border-color: var(--line);
+  background: #111914;
+  color: var(--ink);
+}
+
+html[data-theme="dark"] .league-nav,
+html[data-theme="dark"] .theme-options,
+html[data-theme="dark"] .data-note,
+html[data-theme="dark"] .team-avatar,
+html[data-theme="dark"] .position,
+html[data-theme="dark"] .player-history,
+html[data-theme="dark"] .trade-side,
+html[data-theme="dark"] .pair-summary > b,
+html[data-theme="dark"] .pick-list > span,
+html[data-theme="dark"] .history-order,
+html[data-theme="dark"] .event-details,
+html[data-theme="dark"] .round-label {
+  background: #212d26;
+}
+
+html[data-theme="dark"] .league-nav button.active,
+html[data-theme="dark"] .theme-options button.active,
+html[data-theme="dark"] .lineage-head .history-order button.active {
+  background: #314138;
+  color: #9ae3ba;
+}
+
+html[data-theme="dark"] .team-tab.selected,
+html[data-theme="dark"] .player:hover,
+html[data-theme="dark"] .player-card.slot-match > .player,
+html[data-theme="dark"] .chart-legend button:hover,
+html[data-theme="dark"] .chart-legend button.selected {
+  border-color: #4f8f70;
+  background: #21362b;
+}
+
+html[data-theme="dark"] .player-card.expanded,
+html[data-theme="dark"] .pick-card.expanded,
+html[data-theme="dark"] .pick-summary,
+html[data-theme="dark"] .board-pick {
+  background: #17231c;
+}
+
+html[data-theme="dark"] .opponent-card,
+html[data-theme="dark"] .standing.winner {
+  background: #252719;
+}
+
+html[data-theme="dark"] .standing-roster-link.standing-podium-1,
+html[data-theme="dark"] .pair-list article.podium-1 {
+  border-color: #75682f;
+  background: #2b2818;
+}
+
+html[data-theme="dark"] .standing-roster-link.standing-podium-2,
+html[data-theme="dark"] .pair-list article.podium-2 {
+  border-color: #555e59;
+  background: #222a25;
+}
+
+html[data-theme="dark"] .standing-roster-link.standing-podium-3,
+html[data-theme="dark"] .pair-list article.podium-3 {
+  border-color: #765342;
+  background: #2b211c;
+}
+
+html[data-theme="dark"] .primary {
+  background: #16825d;
+}
+
+html[data-theme="dark"] .champion,
+html[data-theme="dark"] .og-badge {
+  background: #54451a;
+  color: #ffe896;
+}
+
+html[data-theme="dark"] .chart-grid {
+  stroke: #2d3b33;
+}
+
+html[data-theme="dark"] footer {
+  border-color: var(--line);
+}
+
+@media (max-width: 620px) {
+  .settings-menu > summary span {
+    display: none;
+  }
+
+  .settings-menu > summary {
+    width: 40px;
+    justify-content: center;
+    padding: 0;
+  }
+}

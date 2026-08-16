@@ -1,0 +1,15 @@
+.git
+.gitignore
+.env
+.env.*
+.venv
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/*.egg-info
+**/node_modules
+**/.next
+**/.next-build
+**/*.tsbuildinfo
+.DS_Store

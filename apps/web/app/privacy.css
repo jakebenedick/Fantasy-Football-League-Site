@@ -1,0 +1,159 @@
+footer a {
+  color: inherit;
+  font-weight: 700;
+  text-underline-offset: 3px;
+}
+
+footer a:hover {
+  color: var(--green);
+}
+
+.privacy-shell {
+  width: min(920px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 46px 0 80px;
+}
+
+.privacy-back {
+  display: inline-flex;
+  margin-bottom: 34px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.privacy-back:hover {
+  color: var(--green);
+}
+
+.privacy-hero {
+  padding-bottom: 34px;
+  border-bottom: 1px solid var(--line);
+}
+
+.privacy-hero > span {
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.privacy-hero h1 {
+  max-width: 760px;
+  margin: 14px 0 18px;
+  font: 800 clamp(38px, 6vw, 64px) / 1.02 "Manrope";
+  letter-spacing: -0.05em;
+}
+
+.privacy-hero p {
+  max-width: 760px;
+  margin: 0 0 18px;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.65;
+}
+
+.privacy-hero small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.privacy-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.privacy-summary article {
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+  padding: 17px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+}
+
+.privacy-summary b {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #e2f1dc;
+  color: var(--green);
+  font-size: 11px;
+}
+
+.privacy-summary strong,
+.privacy-summary span {
+  display: block;
+}
+
+.privacy-summary strong {
+  font-size: 12px;
+}
+
+.privacy-summary span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.privacy-policy {
+  padding: clamp(24px, 5vw, 50px);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--card);
+}
+
+.privacy-policy section + section {
+  margin-top: 32px;
+  padding-top: 32px;
+  border-top: 1px solid var(--line);
+}
+
+.privacy-policy h2 {
+  margin: 0 0 12px;
+  font: 800 19px "Manrope";
+}
+
+.privacy-policy p,
+.privacy-policy li {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.privacy-policy p {
+  margin: 0;
+}
+
+.privacy-policy p + p {
+  margin-top: 12px;
+}
+
+.privacy-policy ul {
+  margin: 14px 0;
+  padding-left: 22px;
+}
+
+html[data-theme="dark"] .privacy-summary b {
+  background: #21362b;
+}
+
+@media (max-width: 720px) {
+  .privacy-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .privacy-shell {
+    width: min(100% - 28px, 920px);
+    padding-top: 30px;
+  }
+}
