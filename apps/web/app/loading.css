@@ -8,6 +8,36 @@
   gap: clamp(42px, 8vw, 110px);
 }
 
+.league-setup { max-width: 1180px; }
+.setup-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 22px;
+}
+.setup-heading h1 {
+  margin: 9px 0 5px;
+  font: 800 clamp(38px, 5vw, 62px)/1 "Manrope";
+  letter-spacing: -0.05em;
+}
+.setup-heading p { margin: 0; color: var(--muted); }
+.setup-progress-card {
+  margin-bottom: 28px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  box-shadow: 0 14px 34px rgba(20, 32, 25, 0.05);
+}
+.setup-progress-card .loader-progress { margin: 0 0 14px; }
+.setup-steps {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+.setup-steps li { min-width: 0; }
+.setup-steps li.active { transform: none; }
+
 .loader-visual {
   position: relative;
   width: min(350px, 72vw);
@@ -140,6 +170,14 @@ html[data-theme="dark"] .loader-orbit { border-color: rgba(85, 201, 147, 0.3); }
   .loader-copy { text-align: center; }
   .loader-copy > p { margin-inline: auto; }
   .loader-steps { text-align: left; }
+  .setup-heading { align-items: flex-start; }
+  .setup-steps { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 520px) {
+  .setup-heading { flex-direction: column; }
+  .setup-steps { grid-template-columns: 1fr; }
+  .setup-steps li.waiting { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

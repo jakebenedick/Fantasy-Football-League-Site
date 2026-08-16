@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- Sleeper avatar thumbnails are already CDN-sized. */
 
-import { FormEvent, Fragment, useEffect, useMemo, useState } from "react";
+import { FormEvent, Fragment, useEffect, useMemo, useRef, useState } from "react";
 
 type League = {
   league_id: string;
@@ -320,6 +320,8 @@ export default function Home() {
   const [season, setSeason] = useState(new Date().getFullYear());
   const [leagues, setLeagues] = useState<League[]>([]);
   const [context, setContext] = useState<Context | null>(null);
+  const [preloadedStatistics, setPreloadedStatistics] =
+    useState<ScoringAudit | null>(null);
   const [selectedLeague, setSelectedLeague] = useState<League | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -367,17 +369,26 @@ export default function Home() {
 
   async function openLeague(league: League) {
     setSelectedLeague(league);
+    setPreloadedStatistics(null);
     setStage("loading");
     setLoading(true);
     setError("");
     try {
-      setContext(
-        await getJson<Context>(
-          `/api/v1/sleeper/users/${encodeURIComponent(
-            activeUsername
-          )}/leagues/${league.league_id}`
-        )
+      const nextContext = await getJson<Context>(
+        `/api/v1/sleeper/users/${encodeURIComponent(
+          activeUsername
+        )}/leagues/${league.league_id}`
       );
+      setContext(nextContext);
+
+      // Statistics are part of league setup, not a deferred enhancement. Keep
+      // the setup screen active until the default view is ready so users never
+      // have to wait through a second loading cycle after opening the dashboard.
+      const defaultStatsSeason = Math.max(1999, Number(league.season) - 1);
+      const nextStatistics = await getJson<ScoringAudit>(
+        `/api/v1/sleeper/leagues/${league.league_id}/statistics?season=${defaultStatsSeason}`
+      );
+      setPreloadedStatistics(nextStatistics);
       setStage("dashboard");
     } catch (e) {
       setStage("leagues");
@@ -395,6 +406,7 @@ export default function Home() {
   function reset() {
     setStage("welcome");
     setContext(null);
+    setPreloadedStatistics(null);
     setSelectedLeague(null);
     setLeagues([]);
     setError("");
@@ -490,6 +502,7 @@ export default function Home() {
             context={context}
             loading={loading}
             error={error}
+            preloadedStatistics={preloadedStatistics}
             refresh={refresh}
             changeLeague={() => setStage("leagues")}
           />
@@ -506,7 +519,11 @@ export default function Home() {
   );
 }
 
-const LEAGUE_LOAD_STEPS = [
+const LEAGUE_SETUP_STEPS = [
+  {
+    title: "Select your league",
+    detail: "Choose the league you want Fourth Down to prepare.",
+  },
   {
     title: "Connecting to Sleeper",
     detail: "Opening a secure, read-only connection to the public league API.",
@@ -530,12 +547,12 @@ const LEAGUE_LOAD_STEPS = [
 ];
 
 function LeagueLoadingScreen({ league }: { league: League }) {
-  const [activeStep, setActiveStep] = useState(0);
+  const [activeStep, setActiveStep] = useState(1);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
       setActiveStep((current) =>
-        Math.min(current + 1, LEAGUE_LOAD_STEPS.length - 1)
+        Math.min(current + 1, LEAGUE_SETUP_STEPS.length - 1)
       );
     }, 1350);
     return () => window.clearInterval(timer);
@@ -558,12 +575,12 @@ function LeagueLoadingScreen({ league }: { league: League }) {
         <div className="loader-progress" aria-hidden="true">
           <span
             style={{
-              width: `${((activeStep + 1) / LEAGUE_LOAD_STEPS.length) * 100}%`,
+              width: `${((activeStep + 1) / LEAGUE_SETUP_STEPS.length) * 100}%`,
             }}
           />
         </div>
         <ol className="loader-steps">
-          {LEAGUE_LOAD_STEPS.map((step, index) => {
+          {LEAGUE_SETUP_STEPS.map((step, index) => {
             const state =
               index < activeStep
                 ? "complete"
@@ -693,14 +710,14 @@ function LeaguePicker({
   back: () => void;
 }) {
   return (
-    <section className="content">
+    <section className="content league-setup">
       <button className="back" onClick={back}>
         ← Back
       </button>
-      <div className="page-heading">
+      <div className="setup-heading">
         <div>
-          <span className="kicker">Step 02</span>
-          <h1>Choose a league</h1>
+          <span className="kicker">Setting up Fourth Down</span>
+          <h1>Choose your league</h1>
           <p>
             {username} · {season} season
           </p>
@@ -708,6 +725,26 @@ function LeaguePicker({
         <span className="count">
           {leagues.length} {leagues.length === 1 ? "league" : "leagues"}
         </span>
+      </div>
+      <div className="setup-progress-card" aria-label="League setup progress">
+        <div className="loader-progress" aria-hidden="true">
+          <span
+            style={{ width: `${(1 / LEAGUE_SETUP_STEPS.length) * 100}%` }}
+          />
+        </div>
+        <ol className="loader-steps setup-steps">
+          {LEAGUE_SETUP_STEPS.map((step, index) => (
+            <li className={index === 0 ? "active" : "waiting"} key={step.title}>
+              <span className="loader-step-mark">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <span>
+                <strong>{step.title}</strong>
+                <small>{step.detail}</small>
+              </span>
+            </li>
+          ))}
+        </ol>
       </div>
       {error && <div className="alert">{error}</div>}
       {!leagues.length ? (
@@ -758,12 +795,14 @@ function Dashboard({
   context,
   loading,
   error,
+  preloadedStatistics,
   refresh,
   changeLeague,
 }: {
   context: Context;
   loading: boolean;
   error: string;
+  preloadedStatistics: ScoringAudit | null;
   refresh: () => void;
   changeLeague: () => void;
 }) {
@@ -1036,7 +1075,10 @@ function Dashboard({
       ) : view === "draft" ? (
         <DraftBoard rosters={context.rosters} />
       ) : view === "scoring" ? (
-        <StatisticsView league={context.league} />
+        <StatisticsView
+          league={context.league}
+          initialAudit={preloadedStatistics}
+        />
       ) : !roster ? (
         <div className="empty">
           <h2>No roster found</h2>
@@ -1289,12 +1331,29 @@ function Dashboard({
   );
 }
 
-function StatisticsView({ league }: { league: League }) {
+function StatisticsView({
+  league,
+  initialAudit,
+}: {
+  league: League;
+  initialAudit: ScoringAudit | null;
+}) {
   const defaultSeason = Math.max(1999, Number(league.season) - 1);
+  const usableInitialAudit =
+    initialAudit?.league_id === league.league_id &&
+    initialAudit.season === defaultSeason &&
+    initialAudit.week === null
+      ? initialAudit
+      : null;
   const [season, setSeason] = useState(defaultSeason);
   const [week, setWeek] = useState<number | null>(null);
-  const [audit, setAudit] = useState<ScoringAudit | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [audit, setAudit] = useState<ScoringAudit | null>(usableInitialAudit);
+  const [loading, setLoading] = useState(!usableInitialAudit);
+  const loadedRequestKey = useRef<string | null>(
+    usableInitialAudit
+      ? `${league.league_id}:${defaultSeason}:all`
+      : null
+  );
   const [error, setError] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [detailTab, setDetailTab] = useState<"statistics" | "transactions">(
@@ -1314,6 +1373,12 @@ function StatisticsView({ league }: { league: League }) {
   }>({ key: "points", direction: "desc" });
 
   useEffect(() => {
+    const requestKey = `${league.league_id}:${season}:${week ?? "all"}`;
+    if (loadedRequestKey.current === requestKey) {
+      setLoading(false);
+      setError("");
+      return;
+    }
     let active = true;
     setLoading(true);
     setError("");
@@ -1322,7 +1387,10 @@ function StatisticsView({ league }: { league: League }) {
       `/api/v1/sleeper/leagues/${league.league_id}/statistics?season=${season}${weekQuery}`
     )
       .then((result) => {
-        if (active) setAudit(result);
+        if (active) {
+          setAudit(result);
+          loadedRequestKey.current = requestKey;
+        }
       })
       .catch((reason: Error) => {
         if (active) setError(reason.message);
