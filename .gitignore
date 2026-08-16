@@ -13,6 +13,7 @@ __pycache__/
 node_modules/
 .next/
 .next-build/
+out/
 *.tsbuildinfo
 npm-debug.log*
 

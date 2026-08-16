@@ -5,7 +5,7 @@ services:
     plan: free
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    healthCheckPath: /
+    healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:
       - key: SLEEPER_BASE_URL

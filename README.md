@@ -45,9 +45,9 @@ Checks: `pytest apps/api/tests`, `ruff check apps/api`, `mypy apps/api/app`, and
 ## Deploy for league feedback
 
 The repository includes a root `Dockerfile` and `render.yaml` for a single-service
-Render deployment. Next.js is the only public process; its same-origin `/api/*`
-rewrite forwards requests to FastAPI on the container's internal loopback interface.
-No database or persistent filesystem is used.
+Render deployment. Next.js is exported during the Docker build and FastAPI serves
+those static assets and the same-origin `/api/*` routes from one public process.
+No Node server, database, or persistent filesystem is used at runtime.
 
 1. Push this directory to its dedicated GitHub repository.
 2. In Render, choose **New → Blueprint** and select the repository.
