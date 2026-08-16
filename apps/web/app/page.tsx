@@ -710,33 +710,76 @@ function LeaguePicker({
   back: () => void;
 }) {
   return (
-    <section className="content league-setup">
-      <button className="back" onClick={back}>
-        ← Back
-      </button>
-      <div className="setup-heading">
-        <div>
-          <span className="kicker">Setting up Fourth Down</span>
-          <h1>Choose your league</h1>
-          <p>
-            {username} · {season} season
-          </p>
-        </div>
-        <span className="count">
-          {leagues.length} {leagues.length === 1 ? "league" : "leagues"}
-        </span>
+    <section className="league-loader league-selector-loader">
+      <div className="loader-visual" aria-hidden="true">
+        <span className="loader-orbit loader-orbit-one" />
+        <span className="loader-orbit loader-orbit-two" />
+        <span className="loader-ball">🏈</span>
       </div>
-      <div className="setup-progress-card" aria-label="League setup progress">
+      <div className="loader-copy">
+        <button className="back loader-back" onClick={back}>
+          ← Use another account
+        </button>
+        <span className="kicker">Setting up Fourth Down</span>
+        <h1>Choose your league</h1>
+        <p>
+          {username} · {season} season · {leagues.length}{" "}
+          {leagues.length === 1 ? "league" : "leagues"} found
+        </p>
         <div className="loader-progress" aria-hidden="true">
           <span
             style={{ width: `${(1 / LEAGUE_SETUP_STEPS.length) * 100}%` }}
           />
         </div>
-        <ol className="loader-steps setup-steps">
-          {LEAGUE_SETUP_STEPS.map((step, index) => (
-            <li className={index === 0 ? "active" : "waiting"} key={step.title}>
+        <ol className="loader-steps selector-steps" aria-label="League setup progress">
+          <li className="active setup-selection-step">
+            <span className="loader-step-mark">01</span>
+            <div className="setup-selection-content">
+              <strong>{LEAGUE_SETUP_STEPS[0].title}</strong>
+              <small>{LEAGUE_SETUP_STEPS[0].detail}</small>
+              {error && (
+                <div className="alert selector-alert" role="alert">
+                  {error}
+                </div>
+              )}
+              {!leagues.length ? (
+                <div className="selector-empty">
+                  <span>No leagues were found for this season.</span>
+                  <button className="secondary" onClick={back}>
+                    Try another account
+                  </button>
+                </div>
+              ) : (
+                <div className="league-choice-list">
+                  {leagues.map((league) => (
+                    <button
+                      className="league-choice"
+                      disabled={loading}
+                      key={league.league_id}
+                      onClick={() => select(league)}
+                    >
+                      <span className="league-choice-status" aria-hidden="true" />
+                      <span className="league-choice-copy">
+                        <strong>{league.name}</strong>
+                        <small>
+                          {league.total_rosters} teams ·{" "}
+                          {league.roster_positions.filter((x) => x !== "BN").length}{" "}
+                          starting slots
+                        </small>
+                      </span>
+                      <span className="league-choice-arrow">
+                        <Icon name="arrow" />
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </li>
+          {LEAGUE_SETUP_STEPS.slice(1).map((step, index) => (
+            <li className="waiting" key={step.title}>
               <span className="loader-step-mark">
-                {String(index + 1).padStart(2, "0")}
+                {String(index + 2).padStart(2, "0")}
               </span>
               <span>
                 <strong>{step.title}</strong>
@@ -746,47 +789,6 @@ function LeaguePicker({
           ))}
         </ol>
       </div>
-      {error && <div className="alert">{error}</div>}
-      {!leagues.length ? (
-        <div className="empty">
-          <Icon name="team" />
-          <h2>No leagues found</h2>
-          <p>Try another season or check the Sleeper username.</p>
-          <button className="secondary" onClick={back}>
-            Try again
-          </button>
-        </div>
-      ) : (
-        <div className="league-grid">
-          {leagues.map((league, index) => (
-            <button
-              className="league-card"
-              disabled={loading}
-              key={league.league_id}
-              onClick={() => select(league)}
-            >
-              <span className="league-index">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <div>
-                <span className="status">
-                  <span />
-                  {league.status.replaceAll("_", " ")}
-                </span>
-                <h2>{league.name}</h2>
-                <p>
-                  {league.total_rosters} teams ·{" "}
-                  {league.roster_positions.filter((x) => x !== "BN").length}{" "}
-                  starting slots
-                </p>
-              </div>
-              <span className="open">
-                <Icon name="arrow" />
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
     </section>
   );
 }
