@@ -1,0 +1,147 @@
+.league-loader {
+  width: min(1060px, 100%);
+  min-height: min(650px, calc(100vh - 210px));
+  margin: auto;
+  display: grid;
+  grid-template-columns: minmax(270px, 0.8fr) minmax(420px, 1.2fr);
+  align-items: center;
+  gap: clamp(42px, 8vw, 110px);
+}
+
+.loader-visual {
+  position: relative;
+  width: min(350px, 72vw);
+  aspect-ratio: 1;
+  margin: auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201, 244, 90, 0.3), transparent 63%);
+}
+
+.loader-ball {
+  position: relative;
+  z-index: 2;
+  width: 108px;
+  height: 108px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 31px;
+  background: linear-gradient(145deg, #0d7550, #06472f);
+  box-shadow: 0 24px 50px rgba(7, 72, 48, 0.24);
+  font-size: 49px;
+  animation: loader-float 2.6s ease-in-out infinite;
+}
+
+.loader-orbit {
+  position: absolute;
+  border: 1px solid rgba(10, 101, 68, 0.24);
+  border-radius: 50%;
+  animation: loader-spin 5s linear infinite;
+}
+
+.loader-orbit::after {
+  content: "";
+  position: absolute;
+  top: 8%;
+  left: 17%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--lime);
+  box-shadow: 0 0 0 7px rgba(201, 244, 90, 0.18);
+}
+
+.loader-orbit-one { inset: 15%; }
+.loader-orbit-two {
+  inset: 3%;
+  animation-duration: 8s;
+  animation-direction: reverse;
+  opacity: 0.55;
+}
+.loader-orbit-two::after { top: auto; bottom: 16%; left: auto; right: 9%; }
+
+.loader-copy h1 {
+  margin: 12px 0 12px;
+  font: 800 clamp(36px, 5vw, 60px)/1 "Manrope";
+  letter-spacing: -0.05em;
+}
+.loader-copy > p {
+  max-width: 620px;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.loader-progress {
+  height: 5px;
+  margin: 28px 0 20px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line);
+}
+.loader-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--green), var(--lime));
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.loader-steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 5px; }
+.loader-steps li {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: var(--muted);
+  transition: 0.35s ease;
+}
+.loader-steps li.active {
+  border-color: var(--line);
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 10px 28px rgba(20, 32, 25, 0.07);
+  transform: translateX(5px);
+}
+.loader-steps li.complete { color: var(--green); opacity: 0.72; }
+.loader-step-mark {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #e7ece4;
+  font: 800 10px "Manrope";
+}
+.loader-steps li.active .loader-step-mark {
+  background: var(--green);
+  color: white;
+  animation: loader-pulse 1.3s ease-in-out infinite;
+}
+.loader-steps li.complete .loader-step-mark { background: #dff0d7; }
+.loader-steps strong { display: block; font: 700 13px "Manrope"; }
+.loader-steps small { display: block; margin-top: 3px; font-size: 11px; line-height: 1.4; }
+
+html[data-theme="dark"] .loader-step-mark { background: #212d26; }
+html[data-theme="dark"] .loader-steps li.complete .loader-step-mark { background: #203b2d; }
+html[data-theme="dark"] .loader-orbit { border-color: rgba(85, 201, 147, 0.3); }
+
+@keyframes loader-spin { to { transform: rotate(360deg); } }
+@keyframes loader-float { 50% { transform: translateY(-9px) rotate(-3deg); } }
+@keyframes loader-pulse { 50% { box-shadow: 0 0 0 7px rgba(10, 101, 68, 0.12); } }
+
+@media (max-width: 780px) {
+  .league-loader { grid-template-columns: 1fr; gap: 12px; padding: 24px 0; }
+  .loader-visual { width: min(230px, 58vw); }
+  .loader-ball { width: 84px; height: 84px; border-radius: 24px; font-size: 38px; }
+  .loader-copy { text-align: center; }
+  .loader-copy > p { margin-inline: auto; }
+  .loader-steps { text-align: left; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader-ball, .loader-orbit, .loader-steps li.active .loader-step-mark { animation: none; }
+}

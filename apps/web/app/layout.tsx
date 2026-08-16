@@ -17,5 +17,6 @@ import "./live-standings.css";
 import "./theme.css";
 import "./privacy.css";
 import "./scoring.css";
+import "./loading.css";
 export const metadata: Metadata = { title: "Fantasy Co-Manager" };
 export default function Layout({children}:{children:React.ReactNode}) { return <html lang="en"><body>{children}</body></html>; }

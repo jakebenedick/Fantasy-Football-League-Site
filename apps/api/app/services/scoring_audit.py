@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 import nflreadpy as nfl  # type: ignore[import-untyped]
+import polars as pl
 
 from app.domain.models import (
     LeagueScoringAudit,
@@ -768,7 +769,6 @@ async def _load_defense_data(season: int) -> list[dict[str, Any]]:
     async with _data_lock:
         try:
             if season not in _defense_rows_by_season:
-                frame = await asyncio.to_thread(nfl.load_pbp, [season])
                 columns = [
                     "game_id",
                     "season_type",
@@ -803,7 +803,17 @@ async def _load_defense_data(season: int) -> list[dict[str, Any]]:
                     "home_team",
                     "away_team",
                 ]
-                selected_rows = frame.select(columns).to_dicts()
+                # nflreadpy's generic downloader materializes the entire 100+ column
+                # play-by-play file, keeps the downloaded bytes, and caches the full
+                # frame before we can select the fields we need. That exceeds the
+                # memory available to small production containers. Polars reads only
+                # the selected Parquet columns and keeps the peak comfortably bounded.
+                url = (
+                    "https://github.com/nflverse/nflverse-data/releases/download/"
+                    f"pbp/play_by_play_{season}.parquet"
+                )
+                frame = await asyncio.to_thread(pl.read_parquet, url, columns=columns)
+                selected_rows = frame.to_dicts()
                 _defense_rows_by_season[season] = build_defense_game_rows(selected_rows)
                 _special_team_player_rows_by_season[season] = build_special_team_player_rows(
                     selected_rows

@@ -229,7 +229,7 @@ type ScoringAudit = {
   }[];
   source: { provider: string; retrieved_at: string };
 };
-type Stage = "welcome" | "leagues" | "dashboard";
+type Stage = "welcome" | "leagues" | "loading" | "dashboard";
 type Theme = "light" | "dark";
 
 const RATE_STAT_KEYS = new Set([
@@ -320,6 +320,7 @@ export default function Home() {
   const [season, setSeason] = useState(new Date().getFullYear());
   const [leagues, setLeagues] = useState<League[]>([]);
   const [context, setContext] = useState<Context | null>(null);
+  const [selectedLeague, setSelectedLeague] = useState<League | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [theme, setTheme] = useState<Theme>("light");
@@ -365,6 +366,8 @@ export default function Home() {
   }
 
   async function openLeague(league: League) {
+    setSelectedLeague(league);
+    setStage("loading");
     setLoading(true);
     setError("");
     try {
@@ -377,6 +380,7 @@ export default function Home() {
       );
       setStage("dashboard");
     } catch (e) {
+      setStage("leagues");
       setError(
         e instanceof Error ? e.message : "Unable to import this league."
       );
@@ -391,6 +395,7 @@ export default function Home() {
   function reset() {
     setStage("welcome");
     setContext(null);
+    setSelectedLeague(null);
     setLeagues([]);
     setError("");
   }
@@ -477,6 +482,9 @@ export default function Home() {
             back={reset}
           />
         )}
+        {stage === "loading" && selectedLeague && (
+          <LeagueLoadingScreen league={selectedLeague} />
+        )}
         {stage === "dashboard" && context && (
           <Dashboard
             context={context}
@@ -495,6 +503,88 @@ export default function Home() {
         <a href="/privacy">Privacy &amp; data use</a>
       </footer>
     </div>
+  );
+}
+
+const LEAGUE_LOAD_STEPS = [
+  {
+    title: "Connecting to Sleeper",
+    detail: "Opening a secure, read-only connection to the public league API.",
+  },
+  {
+    title: "Loading rosters",
+    detail: "Collecting managers, lineups, taxi squads, and draft capital.",
+  },
+  {
+    title: "Matching player data",
+    detail: "Linking every roster spot to current player profiles and images.",
+  },
+  {
+    title: "Preparing player stats",
+    detail: "Getting the scoring and statistics engine ready for this league.",
+  },
+  {
+    title: "Building your dashboard",
+    detail: "Organizing league history, standings, and activity into one view.",
+  },
+];
+
+function LeagueLoadingScreen({ league }: { league: League }) {
+  const [activeStep, setActiveStep] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setActiveStep((current) =>
+        Math.min(current + 1, LEAGUE_LOAD_STEPS.length - 1)
+      );
+    }, 1350);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return (
+    <section className="league-loader" aria-live="polite" aria-busy="true">
+      <div className="loader-visual" aria-hidden="true">
+        <span className="loader-orbit loader-orbit-one" />
+        <span className="loader-orbit loader-orbit-two" />
+        <span className="loader-ball">🏈</span>
+      </div>
+      <div className="loader-copy">
+        <span className="kicker">Setting up your league</span>
+        <h1>{league.name}</h1>
+        <p>
+          We&apos;re assembling the latest public league data. A sleeping host may
+          need a little extra time to warm up.
+        </p>
+        <div className="loader-progress" aria-hidden="true">
+          <span
+            style={{
+              width: `${((activeStep + 1) / LEAGUE_LOAD_STEPS.length) * 100}%`,
+            }}
+          />
+        </div>
+        <ol className="loader-steps">
+          {LEAGUE_LOAD_STEPS.map((step, index) => {
+            const state =
+              index < activeStep
+                ? "complete"
+                : index === activeStep
+                ? "active"
+                : "waiting";
+            return (
+              <li className={state} key={step.title}>
+                <span className="loader-step-mark">
+                  {state === "complete" ? "✓" : String(index + 1).padStart(2, "0")}
+                </span>
+                <span>
+                  <strong>{step.title}</strong>
+                  <small>{step.detail}</small>
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+    </section>
   );
 }
 
