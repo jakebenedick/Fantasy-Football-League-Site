@@ -1,7 +1,16 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- Sleeper avatar thumbnails are already CDN-sized. */
 
-import { FormEvent, Fragment, useEffect, useMemo, useRef, useState } from "react";
+import {
+  FormEvent,
+  Fragment,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
+import React from "react";
 
 type League = {
   league_id: string;
@@ -157,6 +166,13 @@ type LeagueActivity = {
     avatar_url: string | null;
     transactions: number;
     trades: number;
+    all_time_points: number;
+    highest_weekly_score: number | null;
+    highest_weekly_season: string | null;
+    highest_weekly_week: number | null;
+    lowest_weekly_score: number | null;
+    lowest_weekly_season: string | null;
+    lowest_weekly_week: number | null;
   }[];
   trade_pairs: {
     owner_ids: string[];
@@ -375,9 +391,9 @@ export default function Home() {
     setError("");
     try {
       const nextContext = await getJson<Context>(
-        `/api/v1/sleeper/users/${encodeURIComponent(
-          activeUsername
-        )}/leagues/${league.league_id}`
+        `/api/v1/sleeper/users/${encodeURIComponent(activeUsername)}/leagues/${
+          league.league_id
+        }`
       );
       setContext(nextContext);
 
@@ -427,11 +443,6 @@ export default function Home() {
         </button>
         <div className="top-actions">
           <span className="prototype">Prototype</span>
-          {stage !== "welcome" && (
-            <button className="text-button" onClick={reset}>
-              Switch account
-            </button>
-          )}
           <details className="settings-menu">
             <summary aria-label="Open settings">
               <Icon name="settings" />
@@ -442,6 +453,32 @@ export default function Home() {
                 <span>Preferences</span>
                 <strong>Settings</strong>
               </div>
+              {stage !== "welcome" && (
+                <div className="settings-context">
+                  <div>
+                    <span>Sleeper username</span>
+                    <strong>{activeUsername}</strong>
+                  </div>
+                  {(context?.league ?? selectedLeague) && (
+                    <div>
+                      <span>Selected league</span>
+                      <strong>
+                        {(context?.league ?? selectedLeague)?.name}
+                      </strong>
+                    </div>
+                  )}
+                  <div className="settings-context-actions">
+                    {leagues.length > 0 && (
+                      <button type="button" onClick={() => setStage("leagues")}>
+                        Switch league
+                      </button>
+                    )}
+                    <button type="button" onClick={reset}>
+                      Switch account
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className="setting-row">
                 <div>
                   <strong>Appearance</strong>
@@ -514,6 +551,8 @@ export default function Home() {
         <span>Your lineup stays under your control</span>
         <span className="footer-separator">•</span>
         <a href="/privacy">Privacy &amp; data use</a>
+        <span className="footer-separator">•</span>
+        <span>© 2026 CodedByJake LLC. All rights reserved.</span>
       </footer>
     </div>
   );
@@ -569,8 +608,8 @@ function LeagueLoadingScreen({ league }: { league: League }) {
         <span className="kicker">Setting up your league</span>
         <h1>{league.name}</h1>
         <p>
-          We&apos;re assembling the latest public league data. A sleeping host may
-          need a little extra time to warm up.
+          We&apos;re assembling the latest public league data. A sleeping host
+          may need a little extra time to warm up.
         </p>
         <div className="loader-progress" aria-hidden="true">
           <span
@@ -590,7 +629,9 @@ function LeagueLoadingScreen({ league }: { league: League }) {
             return (
               <li className={state} key={step.title}>
                 <span className="loader-step-mark">
-                  {state === "complete" ? "✓" : String(index + 1).padStart(2, "0")}
+                  {state === "complete"
+                    ? "✓"
+                    : String(index + 1).padStart(2, "0")}
                 </span>
                 <span>
                   <strong>{step.title}</strong>
@@ -731,7 +772,10 @@ function LeaguePicker({
             style={{ width: `${(1 / LEAGUE_SETUP_STEPS.length) * 100}%` }}
           />
         </div>
-        <ol className="loader-steps selector-steps" aria-label="League setup progress">
+        <ol
+          className="loader-steps selector-steps"
+          aria-label="League setup progress"
+        >
           <li className="active setup-selection-step">
             <span className="loader-step-mark">01</span>
             <div className="setup-selection-content">
@@ -758,12 +802,18 @@ function LeaguePicker({
                       key={league.league_id}
                       onClick={() => select(league)}
                     >
-                      <span className="league-choice-status" aria-hidden="true" />
+                      <span
+                        className="league-choice-status"
+                        aria-hidden="true"
+                      />
                       <span className="league-choice-copy">
                         <strong>{league.name}</strong>
                         <small>
                           {league.total_rosters} teams ·{" "}
-                          {league.roster_positions.filter((x) => x !== "BN").length}{" "}
+                          {
+                            league.roster_positions.filter((x) => x !== "BN")
+                              .length
+                          }{" "}
                           starting slots
                         </small>
                       </span>
@@ -814,9 +864,9 @@ function Dashboard({
     context.selected_roster?.roster_id ?? context.rosters[0]?.roster_id
   );
   const [rosterSlotFilter, setRosterSlotFilter] = useState<string | null>(null);
-  const [view, setView] = useState<
-    "overview" | "teams" | "scoring" | "draft" | "history"
-  >("overview");
+  const [view, setView] = useState<"overview" | "teams" | "scoring">(
+    "overview"
+  );
   const [activity, setActivity] = useState<LeagueActivity | null>(null);
   const [activityLoading, setActivityLoading] = useState(false);
   const [leagueHistory, setLeagueHistory] = useState<LeagueHistory | null>(
@@ -973,7 +1023,12 @@ function Dashboard({
             )}
             <div>
               <h1>{context.league.name}</h1>
-              <p>{context.selected_user.display_name}&apos;s team</p>
+              <p className="league-summary">
+                {activity
+                  ? `Live standings and dynasty activity from
+                       ${activity.seasons_scanned.sort()[0]} to the present.`
+                  : "Preparing live standings and league activity…"}
+              </p>
             </div>
           </div>
         </div>
@@ -1037,7 +1092,7 @@ function Dashboard({
           className={view === "teams" ? "active" : ""}
           onClick={() => setView("teams")}
         >
-          Teams & rosters
+          Rosters
         </button>
         <button
           className={view === "scoring" ? "active" : ""}
@@ -1045,37 +1100,25 @@ function Dashboard({
         >
           Statistics
         </button>
-        <button
-          className={view === "draft" ? "active" : ""}
-          onClick={() => setView("draft")}
-        >
-          Draft capital
-        </button>
-
-        <button
-          className={view === "history" ? "active" : ""}
-          onClick={() => setView("history")}
-        >
-          League history
-        </button>
       </nav>
       {view === "overview" ? (
-        <LeagueOverview
-          activity={championActivity}
-          loading={activityLoading}
-          rosters={context.rosters}
-          onOpenRoster={(rosterId) => {
-            setSelectedRosterId(rosterId);
-            setView("teams");
-          }}
-        />
-      ) : view === "history" ? (
-        <LeagueHistoryView
-          history={leagueHistory}
-          loading={leagueHistoryLoading}
-        />
-      ) : view === "draft" ? (
-        <DraftBoard rosters={context.rosters} />
+        <>
+          <LeagueOverview
+            activity={championActivity}
+            loading={activityLoading}
+            rosters={context.rosters}
+            onOpenRoster={(rosterId) => {
+              setSelectedRosterId(rosterId);
+              setView("teams");
+            }}
+          />
+          <section className="dashboard-history-section">
+            <LeagueHistoryView
+              history={leagueHistory}
+              loading={leagueHistoryLoading}
+            />
+          </section>
+        </>
       ) : view === "scoring" ? (
         <StatisticsView
           league={context.league}
@@ -1315,6 +1358,7 @@ function Dashboard({
               picks={roster.draft_picks}
               leagueId={context.league.league_id}
               catalog={context.players}
+              rosters={context.rosters}
             />
             {!isMyTeam && (
               <SeasonHistory history={history} loading={historyLoading} />
@@ -1352,9 +1396,7 @@ function StatisticsView({
   const [audit, setAudit] = useState<ScoringAudit | null>(usableInitialAudit);
   const [loading, setLoading] = useState(!usableInitialAudit);
   const loadedRequestKey = useRef<string | null>(
-    usableInitialAudit
-      ? `${league.league_id}:${defaultSeason}:all`
-      : null
+    usableInitialAudit ? `${league.league_id}:${defaultSeason}:all` : null
   );
   const [error, setError] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -1373,6 +1415,8 @@ function StatisticsView({
     key: string;
     direction: "asc" | "desc";
   }>({ key: "points", direction: "desc" });
+  const [rowLimit, setRowLimit] = useState<50 | 100 | 250 | "all">(50);
+  const [tableAnimationParent] = useAutoAnimate<HTMLTableSectionElement>();
 
   useEffect(() => {
     const requestKey = `${league.league_id}:${season}:${week ?? "all"}`;
@@ -1457,14 +1501,23 @@ function StatisticsView({
     });
   }, [audit, position, rosterStatus, search, sort, statDisplay]);
 
+  useEffect(() => {
+    setRowLimit(50);
+    setExpanded(null);
+  }, [position, rosterStatus, search, season, sort, statDisplay, week]);
+
+  const visiblePlayers = useMemo(
+    () => (rowLimit === "all" ? players : players.slice(0, rowLimit)),
+    [players, rowLimit]
+  );
+
   function changeSort(key: string) {
     setSort((current) =>
       current.key === key
         ? { key, direction: current.direction === "asc" ? "desc" : "asc" }
         : {
             key,
-            direction:
-              key === "player" || key === "outlook" ? "asc" : "desc",
+            direction: key === "player" || key === "outlook" ? "asc" : "desc",
           }
     );
   }
@@ -1472,7 +1525,11 @@ function StatisticsView({
   const arrow = (key: string) =>
     sort.key === key ? (sort.direction === "asc" ? " ↑" : " ↓") : "";
   const metricCategory = (key: string) => {
-    if (["pass_att", "rush_att", "targets", "touches", "opportunities"].includes(key))
+    if (
+      ["pass_att", "rush_att", "targets", "touches", "opportunities"].includes(
+        key
+      )
+    )
       return "Opportunity";
     if (
       [
@@ -1819,8 +1876,8 @@ function StatisticsView({
                   </th>
                 </tr>
               </thead>
-              <tbody>
-                {players.map((player, index) => {
+              <tbody ref={tableAnimationParent}>
+                {visiblePlayers.map((player, index) => {
                   const isOpen = expanded === player.sleeper_player_id;
                   return (
                     <Fragment
@@ -1836,21 +1893,6 @@ function StatisticsView({
                         <td className="rank-column">
                           <strong>{index + 1}</strong>
                         </td>
-                        <td className="outlook-cell">
-                          {player.value_outlook ? (
-                            <>
-                              <strong>#{Math.round(player.value_outlook.ecr)}</strong>
-                              <small>
-                                {player.value_outlook.position_rank
-                                  ? `${player.position ?? "POS"}${player.value_outlook.position_rank}`
-                                  : "Consensus"}{" "}
-                                · Tier {player.value_outlook.tier ?? "—"}
-                              </small>
-                            </>
-                          ) : (
-                            <span>—</span>
-                          )}
-                        </td>
                         <td>
                           <div className="leader-player">
                             {player.avatar_url ? (
@@ -1865,6 +1907,25 @@ function StatisticsView({
                               </small>
                             </div>
                           </div>
+                        </td>
+                        <td className="outlook-cell">
+                          {player.value_outlook ? (
+                            <>
+                              <strong>
+                                #{Math.round(player.value_outlook.ecr)}
+                              </strong>
+                              <small>
+                                {player.value_outlook.position_rank
+                                  ? `${player.position ?? "POS"}${
+                                      player.value_outlook.position_rank
+                                    }`
+                                  : "Consensus"}{" "}
+                                · Tier {player.value_outlook.tier ?? "—"}
+                              </small>
+                            </>
+                          ) : (
+                            <span>—</span>
+                          )}
                         </td>
                         {statisticColumns.map((column) => (
                           <td key={column.key} className="stat-value">
@@ -1910,6 +1971,34 @@ function StatisticsView({
               </tbody>
             </table>
           </div>
+          {players.length > 0 && (
+            <div className="statistics-pagination" aria-label="Statistics result display controls">
+              <span>
+                Showing <strong>1–{visiblePlayers.length}</strong> of{" "}
+                <strong>{players.length}</strong> players
+              </span>
+              <label>
+                Rows shown
+                <select
+                  value={rowLimit}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setExpanded(null);
+                    setRowLimit(
+                      value === "all"
+                        ? "all"
+                        : (Number(value) as 50 | 100 | 250)
+                    );
+                  }}
+                >
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={250}>250</option>
+                  <option value="all">All</option>
+                </select>
+              </label>
+            </div>
+          )}
           <p className="scoring-footnote">
             Ownership reflects today&apos;s Sleeper rosters; statistics reflect
             the selected historical period. Player cards keep production and
@@ -2101,7 +2190,9 @@ function PlayerStatisticsCard({
                   <dt>Position</dt>
                   <dd>
                     {player.value_outlook.position_rank
-                      ? `${player.position ?? "POS"}${player.value_outlook.position_rank}`
+                      ? `${player.position ?? "POS"}${
+                          player.value_outlook.position_rank
+                        }`
                       : "—"}
                   </dd>
                 </div>
@@ -2260,6 +2351,19 @@ function LeagueOverview({
   const leastTransactions = [...activity.teams].sort(
     (a, b) => a.transactions - b.transactions || a.trades - b.trades
   );
+  const byAllTimePoints = activity.teams
+    .filter((team) => team.all_time_points > 0)
+    .sort((a, b) => b.all_time_points - a.all_time_points);
+  const byHighestWeek = activity.teams
+    .filter((team) => team.highest_weekly_score !== null)
+    .sort(
+      (a, b) => Number(b.highest_weekly_score) - Number(a.highest_weekly_score)
+    );
+  const byLowestWeek = activity.teams
+    .filter((team) => team.lowest_weekly_score !== null)
+    .sort(
+      (a, b) => Number(a.lowest_weekly_score) - Number(b.lowest_weekly_score)
+    );
   const sortedTeams = [...activity.teams].sort((a, b) => {
     const comparison =
       sort.key === "manager"
@@ -2275,80 +2379,152 @@ function LeagueOverview({
     }));
   const arrow = (key: "manager" | "trades" | "transactions") =>
     sort.key === key ? (sort.direction === "asc" ? " ↑" : " ↓") : "";
-  const rosterForOwner = (ownerId: string) =>
-    rosters.find((roster) => roster.owner_id === ownerId);
-  const Leader = ({
+  const normalizeManagerName = (value: string | null | undefined) =>
+    (value ?? "")
+      .replace(/\s*🏆\s*$/u, "")
+      .trim()
+      .toLocaleLowerCase();
+  const rosterForTeam = (team: LeagueActivity["teams"][number]) => {
+    const ownerMatch = rosters.find(
+      (roster) => roster.owner_id === team.owner_id
+    );
+    if (ownerMatch) return ownerMatch;
+
+    const managerName = normalizeManagerName(team.manager_name);
+    const nameMatches = rosters.filter((roster) =>
+      [roster.owner_display_name, roster.team_name].some(
+        (name) => normalizeManagerName(name) === managerName
+      )
+    );
+    return nameMatches.length === 1 ? nameMatches[0] : undefined;
+  };
+  const HotNotCard = ({
     label,
-    team,
-    value,
+    hotTeam,
+    coldTeam,
+    hotValue,
+    coldValue,
+    hotDetail,
+    coldDetail,
   }: {
     label: string;
-    team: LeagueActivity["teams"][number] | undefined;
-    value: number | undefined;
-  }) => (
-    <article className="activity-leader">
-      <span>{label}</span>
-      {team && (
+    hotTeam: LeagueActivity["teams"][number] | undefined;
+    coldTeam: LeagueActivity["teams"][number] | undefined;
+    hotValue: string;
+    coldValue: string;
+    hotDetail?: string;
+    coldDetail?: string;
+  }) => {
+    const Side = ({
+      team,
+      value,
+      detail,
+      temperature,
+    }: {
+      team: LeagueActivity["teams"][number] | undefined;
+      value: string;
+      detail?: string;
+      temperature: "hot" | "cold";
+    }) => {
+      if (!team) return <div className={`hot-not-side ${temperature}`} />;
+      const linkedRoster = rosterForTeam(team);
+      return (
         <button
           type="button"
-          className="activity-leader-link"
-          disabled={!rosterForOwner(team.owner_id)}
-          onClick={() => {
-            const roster = rosterForOwner(team.owner_id);
-            if (roster) onOpenRoster(roster.roster_id);
-          }}
+          className={`hot-not-side ${temperature}`}
+          disabled={!linkedRoster}
+          onClick={() => linkedRoster && onOpenRoster(linkedRoster.roster_id)}
           aria-label={`View ${team.manager_name}'s roster`}
         >
-          {team.avatar_url ? (
-            <img src={team.avatar_url} alt="" />
-          ) : (
-            <i>{team.manager_name.slice(0, 2).toUpperCase()}</i>
-          )}
-          <div>
-            <strong>{team.manager_name}</strong>
-            <small>
-              {value}{" "}
-              {label.toLowerCase().includes("trade")
-                ? "trades"
-                : "transactions"}
-            </small>
+          <span className="temperature-label">
+            {temperature === "hot" ? "🔥 Hot" : "❄️ Not"}
+          </span>
+          <div className="hot-not-manager">
+            {team.avatar_url ? (
+              <img src={team.avatar_url} alt="" />
+            ) : (
+              <i>{team.manager_name.slice(0, 2).toUpperCase()}</i>
+            )}
+            <span>
+              <strong>{team.manager_name}</strong>
+              <small>{detail}</small>
+            </span>
           </div>
+          <b>{value}</b>
         </button>
-      )}
-    </article>
-  );
+      );
+    };
+    return (
+      <article className="hot-not-card">
+        <header>
+          <span>{label}</span>
+          <small>Most vs. least</small>
+        </header>
+        <div className="hot-not-comparison">
+          <Side
+            team={hotTeam}
+            value={hotValue}
+            detail={hotDetail}
+            temperature="hot"
+          />
+          <Side
+            team={coldTeam}
+            value={coldValue}
+            detail={coldDetail}
+            temperature="cold"
+          />
+        </div>
+      </article>
+    );
+  };
   return (
     <section className="activity-dashboard">
-      <div className="archive-head">
-        <span className="eyebrow">League pulse</span>
-        <h2>League dashboard</h2>
-        <p>
-          Live standings and completed Sleeper activity across{" "}
-          {activity.seasons_scanned.length} season
-          {activity.seasons_scanned.length === 1 ? "" : "s"}:{" "}
-          {activity.seasons_scanned.join(", ")}.
-        </p>
-      </div>
-      <div className="activity-leaders">
-        <Leader
-          label="Most trades"
-          team={byTrades[0]}
-          value={byTrades[0]?.trades}
+      <div className="hot-not-grid">
+        <HotNotCard
+          label="Trades"
+          hotTeam={byTrades[0]}
+          coldTeam={leastTrades[0]}
+          hotValue={`${byTrades[0]?.trades ?? 0}`}
+          coldValue={`${leastTrades[0]?.trades ?? 0}`}
+          hotDetail="completed trades"
+          coldDetail="completed trades"
         />
-        <Leader
-          label="Most transactions"
-          team={byTransactions[0]}
-          value={byTransactions[0]?.transactions}
+        <HotNotCard
+          label="Transactions"
+          hotTeam={byTransactions[0]}
+          coldTeam={leastTransactions[0]}
+          hotValue={`${byTransactions[0]?.transactions ?? 0}`}
+          coldValue={`${leastTransactions[0]?.transactions ?? 0}`}
+          hotDetail="completed moves"
+          coldDetail="completed moves"
         />
-        <Leader
-          label="Least trades"
-          team={leastTrades[0]}
-          value={leastTrades[0]?.trades}
+        <HotNotCard
+          label="All-time points"
+          hotTeam={byAllTimePoints[0]}
+          coldTeam={byAllTimePoints.at(-1)}
+          hotValue={(byAllTimePoints[0]?.all_time_points ?? 0).toLocaleString()}
+          coldValue={(
+            byAllTimePoints.at(-1)?.all_time_points ?? 0
+          ).toLocaleString()}
+          hotDetail="dynasty total"
+          coldDetail="dynasty total"
         />
-        <Leader
-          label="Least transactions"
-          team={leastTransactions[0]}
-          value={leastTransactions[0]?.transactions}
+        <HotNotCard
+          label="Weekly score"
+          hotTeam={byHighestWeek[0]}
+          coldTeam={byLowestWeek[0]}
+          hotValue={byHighestWeek[0]?.highest_weekly_score?.toFixed(2) ?? "—"}
+          coldValue={byLowestWeek[0]?.lowest_weekly_score?.toFixed(2) ?? "—"}
+          hotDetail={
+            byHighestWeek[0]
+              ? `${byHighestWeek[0].highest_weekly_season} · Week ${byHighestWeek[0].highest_weekly_week}`
+              : undefined
+          }
+          coldDetail={
+            byLowestWeek[0]
+              ? `${byLowestWeek[0].lowest_weekly_season} · Week ${byLowestWeek[0].lowest_weekly_week}`
+              : undefined
+          }
         />
       </div>
       <div className="activity-grid">
@@ -2387,9 +2563,9 @@ function LeagueOverview({
                 <button
                   type="button"
                   className="manager-roster-link"
-                  disabled={!rosterForOwner(team.owner_id)}
+                  disabled={!rosterForTeam(team)}
                   onClick={() => {
-                    const roster = rosterForOwner(team.owner_id);
+                    const roster = rosterForTeam(team);
                     if (roster) onOpenRoster(roster.roster_id);
                   }}
                 >
@@ -2428,6 +2604,16 @@ function LiveStandings({
         (Number(a.settings.fpts ?? 0) +
           Number(a.settings.fpts_decimal ?? 0) / 100)
   );
+  const seasonHasStarted = standings.some((team) => {
+    const settings = team.settings;
+    return (
+      Number(settings.wins ?? 0) > 0 ||
+      Number(settings.losses ?? 0) > 0 ||
+      Number(settings.ties ?? 0) > 0 ||
+      Number(settings.fpts ?? 0) > 0 ||
+      Number(settings.fpts_decimal ?? 0) > 0
+    );
+  });
   const medals = ["🥇", "🥈", "🥉"];
   return (
     <section className="panel live-standings">
@@ -2444,18 +2630,16 @@ function LiveStandings({
           return (
             <button
               type="button"
-              className={
-                `standing-roster-link ${
-                  index < 3
-                    ? `standing-podium standing-podium-${index + 1}`
-                    : ""
-                }`
-              }
+              className={`standing-roster-link ${
+                seasonHasStarted && index < 3
+                  ? `standing-podium standing-podium-${index + 1}`
+                  : ""
+              }`}
               key={team.roster_id}
               onClick={() => onOpenRoster(team.roster_id)}
               aria-label={`View ${teamLabel(team)} roster`}
             >
-              <b>{medals[index] ?? index + 1}</b>
+              <b>{seasonHasStarted ? medals[index] ?? index + 1 : "T1"}</b>
               {team.owner_avatar_url ? (
                 <img src={team.owner_avatar_url} alt="" />
               ) : (
@@ -2482,12 +2666,13 @@ function LiveStandings({
 function TradePairList({ pairs }: { pairs: LeagueActivity["trade_pairs"] }) {
   const [expanded, setExpanded] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
+  const [animationParent] = useAutoAnimate<HTMLDivElement>();
   if (!pairs.length)
     return <p className="loading-copy">No completed trades were found.</p>;
   const visible = expanded ? pairs : pairs.slice(0, 3);
   const medals = ["🥇", "🥈", "🥉"];
   return (
-    <div className="pair-list">
+    <div className="pair-list" ref={animationParent}>
       {visible.map((pair, index) => {
         const key = pair.owner_ids.join("-");
         const open = selected === key;
@@ -2555,8 +2740,9 @@ function PairTradeDetail({
   index: number;
 }) {
   const [open, setOpen] = useState(false);
+  const [animationParent] = useAutoAnimate<HTMLDivElement>();
   return (
-    <div className="pair-trade">
+    <div className="pair-trade" ref={animationParent}>
       <div className="pair-trade-head">
         <i>{index + 1}</i>
         <div>
@@ -2724,14 +2910,19 @@ function DraftPicks({
   picks,
   leagueId,
   catalog,
+  rosters,
 }: {
   picks: DraftPick[];
   leagueId: string;
   catalog: Record<string, Player>;
+  rosters: Roster[];
 }) {
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [selected, setSelected] = useState<PickHistory | null>(null);
   const [loading, setLoading] = useState(false);
+  const [boardOpen, setBoardOpen] = useState(false);
+  const [panelAnimationParent] = useAutoAnimate<HTMLElement>();
+  const [pickAnimationParent] = useAutoAnimate<HTMLDivElement>();
   const keyFor = (pick: DraftPick) =>
     `${pick.season}-${pick.round}-${pick.original_roster_id}`;
   async function inspect(pick: DraftPick) {
@@ -2755,10 +2946,15 @@ function DraftPicks({
     }
   }
   return (
-    <section className={`panel pick-panel ${selectedKey ? "expanded" : ""}`}>
+    <section
+      ref={panelAnimationParent}
+      className={`panel pick-panel ${
+        selectedKey || boardOpen ? "expanded" : ""
+      } ${boardOpen ? "board-expanded" : ""}`}
+    >
       <span className="eyebrow">Dynasty assets</span>
       <h2>Draft picks</h2>
-      <div className="pick-list">
+      <div className="pick-list" ref={pickAnimationParent}>
         {picks.map((pick, i) => {
           const key = keyFor(pick);
           const expanded = selectedKey === key;
@@ -2851,6 +3047,27 @@ function DraftPicks({
           );
         })}
       </div>
+      <button
+        type="button"
+        className="draft-board-toggle"
+        onClick={() => setBoardOpen((current) => !current)}
+        aria-expanded={boardOpen}
+      >
+        <span>
+          <strong>
+            {boardOpen ? "Hide full draft board" : "View full draft board"}
+          </strong>
+          <small>
+            Compare every team&apos;s current draft capital by year and round.
+          </small>
+        </span>
+        <i aria-hidden="true">{boardOpen ? "−" : "+"}</i>
+      </button>
+      {boardOpen && (
+        <div className="inline-draft-board">
+          <DraftBoard rosters={rosters} />
+        </div>
+      )}
     </section>
   );
 }
@@ -2896,27 +3113,40 @@ function LeagueHistoryView({
   history: LeagueHistory | null;
   loading: boolean;
 }) {
-  if (loading)
-    return (
-      <div className="empty">
-        <span className="spinner dark" />
-        <h2>Loading league history…</h2>
-      </div>
-    );
+  const [open, setOpen] = useState(false);
+  const [animationParent] = useAutoAnimate<HTMLElement>();
   return (
-    <section className="history-archive">
-      <div className="archive-head">
-        <span className="eyebrow">Dynasty archive</span>
-        <h2>League history</h2>
-        <p>
-          Final placements, regular-season performance, playoff brackets, and
-          franchise trends.
-        </p>
-      </div>
-      {history && <FinishTrends history={history} />}{" "}
-      {history?.seasons.map((season) => (
-        <HistorySeason key={season.league_id} season={season} />
-      ))}
+    <section className="history-archive" ref={animationParent}>
+      <button
+        type="button"
+        className="archive-toggle"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span>
+          <small>Dynasty archive</small>
+          <strong>League history</strong>
+          <em>Final placements, playoff brackets, and franchise trends.</em>
+        </span>
+        <i aria-hidden="true">{open ? "−" : "+"}</i>
+      </button>
+      {open && (
+        <div className="archive-expanded">
+          {loading ? (
+            <div className="empty archive-loading">
+              <span className="spinner dark" />
+              <h2>Loading league history…</h2>
+            </div>
+          ) : (
+            <>
+              {history && <FinishTrends history={history} />}
+              {history?.seasons.map((season) => (
+                <HistorySeason key={season.league_id} season={season} />
+              ))}
+            </>
+          )}
+        </div>
+      )}
     </section>
   );
 }
@@ -2934,6 +3164,7 @@ function HistorySeason({
   const [sort, setSort] = useState<"finish" | "record" | "points">("finish");
   const [open, setOpen] = useState(false);
   const [bracketOpen, setBracketOpen] = useState(false);
+  const [animationParent] = useAutoAnimate<HTMLElement>();
   const teams = [...season.teams].sort((a, b) =>
     sort === "points"
       ? b.points - a.points
@@ -2942,7 +3173,7 @@ function HistorySeason({
       : (a.finish_position ?? 999) - (b.finish_position ?? 999)
   );
   return (
-    <section className="panel season-table">
+    <section className="panel season-table" ref={animationParent}>
       <button
         className="season-toggle"
         onClick={() => setOpen((value) => !value)}
@@ -3348,6 +3579,7 @@ function PlayerGroup({
   accent?: boolean;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [animationParent] = useAutoAnimate<HTMLDivElement>();
   const [history, setHistory] = useState<PlayerHistory | null>(null);
   const [statistics, setStatistics] = useState<ScoringAudit | null>(null);
   const [detailTab, setDetailTab] = useState<"statistics" | "transactions">(
@@ -3389,7 +3621,7 @@ function PlayerGroup({
         <span>{playerIds.length}</span>
       </h3>
       {playerIds.length ? (
-        <div className="player-list">
+        <div className="player-list" ref={animationParent}>
           {playerIds.map((id, i) => {
             const player = catalog[id];
             const availability = player?.injury_status ?? player?.status;
@@ -3493,11 +3725,12 @@ function PlayerHistoryEvent({
   index: number;
 }) {
   const [open, setOpen] = useState(false);
+  const [animationParent] = useAutoAnimate<HTMLDivElement>();
   const hasDetails = event.sides.length > 0 || event.details.length > 0;
   return (
     <div className="player-event">
       <i>{index + 1}</i>
-      <div>
+      <div ref={animationParent}>
         <strong>{event.description}</strong>
         <small>
           {event.league_season}

@@ -417,7 +417,7 @@ async def test_import_identifies_roster() -> None:
     }
 
     def handler(request: httpx.Request) -> httpx.Response:
-        if "/transactions/" in request.url.path:
+        if "/transactions/" in request.url.path or "/matchups/" in request.url.path:
             return httpx.Response(200, json=[])
         return httpx.Response(200, json=data[request.url.path])
 

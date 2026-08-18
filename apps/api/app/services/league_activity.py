@@ -1,4 +1,4 @@
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from itertools import combinations
 
@@ -22,6 +22,9 @@ class LeagueActivityService:
     async def get_activity(self, league_id: str) -> LeagueActivity:
         team_counts: Counter[str] = Counter()
         trade_counts: Counter[str] = Counter()
+        all_time_points: defaultdict[str, float] = defaultdict(float)
+        weekly_highs: dict[str, tuple[float, str, int]] = {}
+        weekly_lows: dict[str, tuple[float, str, int]] = {}
         pair_counts: Counter[tuple[str, str]] = Counter()
         pair_history: dict[tuple[str, str], list[LeagueActivityTrade]] = {}
         names: dict[str, str] = {}
@@ -56,6 +59,31 @@ class LeagueActivityService:
                         if member and member.avatar
                         else None
                     )
+            for roster in season.rosters:
+                roster_owner_id = season.owners_by_roster.get(roster.roster_id)
+                if not roster_owner_id:
+                    continue
+                all_time_points[roster_owner_id] += (
+                    float(roster.settings.get("fpts") or 0)
+                    + float(roster.settings.get("fpts_decimal") or 0) / 100
+                )
+            for week, matchup in season.weekly_matchups:
+                matchup_owner_id = season.owners_by_roster.get(matchup.roster_id)
+                # Sleeper returns zero-point placeholders for weeks that have
+                # not been played, so only positive recorded scores qualify.
+                if not matchup_owner_id or matchup.points <= 0:
+                    continue
+                record = (float(matchup.points), str(season.league.season), week)
+                if (
+                    matchup_owner_id not in weekly_highs
+                    or record[0] > weekly_highs[matchup_owner_id][0]
+                ):
+                    weekly_highs[matchup_owner_id] = record
+                if (
+                    matchup_owner_id not in weekly_lows
+                    or record[0] < weekly_lows[matchup_owner_id][0]
+                ):
+                    weekly_lows[matchup_owner_id] = record
             for transaction in season.transactions:
                 if transaction.status != "complete":
                     continue
@@ -74,8 +102,8 @@ class LeagueActivityService:
                     continue
                 sides = []
                 for roster_id in transaction.roster_ids:
-                    owner_id = season.owners_by_roster.get(roster_id)
-                    if not owner_id:
+                    trade_owner_id = season.owners_by_roster.get(roster_id)
+                    if not trade_owner_id:
                         continue
                     assets = [
                         player_name(player_id)
@@ -89,7 +117,7 @@ class LeagueActivityService:
                     )
                     sides.append(
                         LeagueActivityTradeSide(
-                            manager_name=names.get(owner_id, owner_id),
+                            manager_name=names.get(trade_owner_id, trade_owner_id),
                             assets_received=assets,
                         )
                     )
@@ -110,6 +138,29 @@ class LeagueActivityService:
                 avatar_url=avatars.get(owner_id),
                 transactions=team_counts[owner_id],
                 trades=trade_counts[owner_id],
+                all_time_points=round(all_time_points[owner_id], 2),
+                highest_weekly_score=(
+                    round(weekly_highs[owner_id][0], 2)
+                    if owner_id in weekly_highs
+                    else None
+                ),
+                highest_weekly_season=(
+                    weekly_highs[owner_id][1] if owner_id in weekly_highs else None
+                ),
+                highest_weekly_week=(
+                    weekly_highs[owner_id][2] if owner_id in weekly_highs else None
+                ),
+                lowest_weekly_score=(
+                    round(weekly_lows[owner_id][0], 2)
+                    if owner_id in weekly_lows
+                    else None
+                ),
+                lowest_weekly_season=(
+                    weekly_lows[owner_id][1] if owner_id in weekly_lows else None
+                ),
+                lowest_weekly_week=(
+                    weekly_lows[owner_id][2] if owner_id in weekly_lows else None
+                ),
             )
             for owner_id, name in names.items()
         ]

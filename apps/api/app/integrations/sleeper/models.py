@@ -35,6 +35,12 @@ class SleeperRoster(SleeperModel):
     settings: dict[str, int | float | None] = Field(default_factory=dict)
 
 
+class SleeperMatchup(SleeperModel):
+    roster_id: int
+    matchup_id: int | None = None
+    points: float = 0
+
+
 class SleeperLeagueMember(SleeperModel):
     user_id: str
     display_name: str

@@ -6,6 +6,7 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 from app.integrations.sleeper.models import (
     SleeperLeague,
     SleeperLeagueMember,
+    SleeperMatchup,
     SleeperDraft,
     SleeperDraftPick,
     SleeperBracketMatch,
@@ -95,6 +96,12 @@ class SleeperClient:
 
     async def get_members(self, league_id: str) -> list[SleeperLeagueMember]:
         return self._many(SleeperLeagueMember, await self._get_json(f"/league/{league_id}/users"))
+
+    async def get_matchups(self, league_id: str, week: int) -> list[SleeperMatchup]:
+        return self._many(
+            SleeperMatchup,
+            await self._get_json(f"/league/{league_id}/matchups/{week}"),
+        )
 
     async def get_players(self, player_ids: set[str] | None = None) -> dict[str, SleeperPlayer]:
         """Return the cached NFL catalog, optionally restricted to requested IDs."""

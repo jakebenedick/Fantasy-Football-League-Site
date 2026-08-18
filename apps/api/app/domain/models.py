@@ -98,6 +98,13 @@ class LeagueActivityTeam(BaseModel):
     avatar_url: str | None = None
     transactions: int = 0
     trades: int = 0
+    all_time_points: float = 0
+    highest_weekly_score: float | None = None
+    highest_weekly_season: str | None = None
+    highest_weekly_week: int | None = None
+    lowest_weekly_score: float | None = None
+    lowest_weekly_season: str | None = None
+    lowest_weekly_week: int | None = None
 
 
 class LeagueActivityTradeSide(BaseModel):

@@ -1,1 +1,47 @@
-.league-nav{display:flex;gap:5px;padding:5px;background:#e8ece5;border-radius:12px;width:max-content;margin:0 0 24px}.league-nav button{border:0;background:transparent;color:var(--muted);padding:10px 16px;border-radius:8px;font-weight:700;cursor:pointer}.league-nav button.active{background:white;color:var(--green);box-shadow:0 2px 8px #15251912}.draft-board{margin-top:0}.team-legend button{display:flex;align-items:center;gap:5px;border:1px solid transparent;background:transparent;border-radius:99px;padding:6px 9px;font-size:9px;color:var(--muted);cursor:pointer}.team-legend button:hover,.team-legend button.selected{background:white;border-color:#aac2b3;color:var(--green);box-shadow:0 2px 7px #15251910}.team-legend button i{width:8px;height:8px;border-radius:50%}.board-pick{transition:opacity .18s,transform .18s,box-shadow .18s}.board-pick.muted{opacity:.18}.board-pick.focused{transform:translateY(-2px);box-shadow:0 5px 15px #17281c1f}@media(max-width:560px){.league-nav{width:100%}.league-nav button{flex:1;padding-inline:8px}}
+.league-nav {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  margin: 0 0 24px;
+  padding: 5px;
+  border-radius: 12px;
+  background: #e8ece5;
+}
+
+.league-nav button {
+  min-width: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  padding: 11px 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.league-nav button.active {
+  background: white;
+  color: var(--green);
+  box-shadow: 0 2px 8px #15251912;
+}
+
+.draft-board { margin-top: 0; }
+.team-legend button { display: flex; align-items: center; gap: 5px; border: 1px solid transparent; background: transparent; border-radius: 99px; padding: 6px 9px; font-size: 9px; color: var(--muted); cursor: pointer; }
+.team-legend button:hover,
+.team-legend button.selected { background: white; border-color: #aac2b3; color: var(--green); box-shadow: 0 2px 7px #15251910; }
+.team-legend button i { width: 8px; height: 8px; border-radius: 50%; }
+.board-pick { transition: opacity .18s, transform .18s, box-shadow .18s; }
+.board-pick.muted { opacity: .18; }
+.board-pick.focused { transform: translateY(-2px); box-shadow: 0 5px 15px #17281c1f; }
+
+.dashboard-history-section {
+  margin-top: 48px;
+  padding-top: 42px;
+  border-top: 1px solid var(--line);
+}
+
+@media (max-width: 560px) {
+  .league-nav button { padding-inline: 7px; font-size: 12px; }
+  .dashboard-history-section { margin-top: 34px; padding-top: 30px; }
+}

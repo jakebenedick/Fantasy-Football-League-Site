@@ -143,6 +143,47 @@ footer a:hover {
   padding-left: 22px;
 }
 
+.privacy-data-label {
+  overflow: hidden;
+  margin-top: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.privacy-data-row {
+  display: grid;
+  grid-template-columns: minmax(170px, 0.7fr) minmax(0, 1.8fr);
+  gap: 20px;
+  padding: 16px 18px;
+}
+
+.privacy-data-row + .privacy-data-row {
+  border-top: 1px solid var(--line);
+}
+
+.privacy-data-row strong {
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.privacy-data-row span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.privacy-data-head {
+  background: #edf4e9;
+  color: var(--green);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+html[data-theme="dark"] .privacy-data-head {
+  background: #21362b;
+}
+
 html[data-theme="dark"] .privacy-summary b {
   background: #21362b;
 }
@@ -155,5 +196,15 @@ html[data-theme="dark"] .privacy-summary b {
   .privacy-shell {
     width: min(100% - 28px, 920px);
     padding-top: 30px;
+  }
+
+  .privacy-data-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 14px;
+  }
+
+  .privacy-data-head {
+    display: none;
   }
 }

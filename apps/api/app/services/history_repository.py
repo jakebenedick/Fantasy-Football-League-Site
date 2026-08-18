@@ -9,6 +9,7 @@ from app.integrations.sleeper.models import (
     SleeperDraftPick,
     SleeperLeague,
     SleeperLeagueMember,
+    SleeperMatchup,
     SleeperRoster,
     SleeperTransaction,
 )
@@ -24,6 +25,7 @@ class HistorySeasonSnapshot:
     drafts: list[SleeperDraft]
     draft_picks: list[SleeperDraftPick]
     bracket: list[SleeperBracketMatch]
+    weekly_matchups: list[tuple[int, SleeperMatchup]]
     roster_names: dict[int, str]
     owners_by_roster: dict[int, str]
     pick_numbers: dict[tuple[str, int, int], int]
@@ -74,11 +76,21 @@ class LeagueHistoryRepository:
             if not current_id:
                 break
             league = await self._client.get_league(current_id)
-            rosters, members, transaction_batches, drafts, bracket = await asyncio.gather(
+            (
+                rosters,
+                members,
+                transaction_batches,
+                matchup_batches,
+                drafts,
+                bracket,
+            ) = await asyncio.gather(
                 self._client.get_rosters(current_id),
                 self._client.get_members(current_id),
                 asyncio.gather(
                     *(self._client.get_transactions(current_id, week) for week in range(1, 19))
+                ),
+                asyncio.gather(
+                    *(self._client.get_matchups(current_id, week) for week in range(1, 19))
                 ),
                 self._client.get_drafts(current_id),
                 self._client.get_winners_bracket(current_id),
@@ -108,6 +120,11 @@ class LeagueHistoryRepository:
                     drafts=drafts,
                     draft_picks=[pick for result in draft_results for pick in result],
                     bracket=bracket,
+                    weekly_matchups=[
+                        (week, matchup)
+                        for week, matchups in enumerate(matchup_batches, start=1)
+                        for matchup in matchups
+                    ],
                     roster_names=roster_names,
                     owners_by_roster={
                         roster.roster_id: roster.owner_id for roster in rosters if roster.owner_id

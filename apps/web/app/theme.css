@@ -65,6 +65,55 @@
   font: 800 20px "Manrope";
 }
 
+.settings-context {
+  display: grid;
+  gap: 10px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.settings-context > div:not(.settings-context-actions) {
+  display: grid;
+  gap: 3px;
+}
+
+.settings-context span {
+  color: var(--muted);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.settings-context strong {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-context-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-top: 3px;
+}
+
+.settings-context-actions button {
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.settings-context-actions button:hover {
+  border-color: #83aa91;
+  background: #edf4e9;
+}
+
 .setting-row {
   display: grid;
   gap: 13px;
