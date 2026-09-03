@@ -1,7 +1,7 @@
 export const LEAGUE_SETUP_STEPS = [
   {
     title: "Select your league",
-    detail: "Choose the league you want Fourth Down to prepare.",
+    detail: "Choose the league you want FourthDahn to prepare.",
   },
   {
     title: "Connecting to Sleeper",

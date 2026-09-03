@@ -20,6 +20,9 @@ describe("AppHeader", () => {
       />
     );
 
+    expect(
+      screen.getByRole("button", { name: /FourthDahn/i })
+    ).toBeInTheDocument();
     await user.click(screen.getByLabelText("Open settings"));
     expect(screen.getByText("Dynasty League")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /dark/i }));

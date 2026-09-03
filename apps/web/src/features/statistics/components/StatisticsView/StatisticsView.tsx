@@ -296,7 +296,7 @@ export function StatisticsView({
           <p className="outlook-source-note">
             <strong>Value &amp; outlook:</strong>{" "}
             {audit.players.some((player) => player.value_outlook)
-              ? "Current FantasyPros dynasty consensus via DynastyProcess. ECR and expert ranges are source data; tiers are Fourth Down derived."
+              ? "Current FantasyPros dynasty consensus via DynastyProcess. ECR and expert ranges are source data; tiers are FourthDahn derived."
               : audit.outlook_status}
           </p>
           {audit.unsupported_scoring_keys.length > 0 && (

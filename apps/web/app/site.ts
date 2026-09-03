@@ -1,10 +1,9 @@
-export const SITE_NAME = "Fourth Down AI";
+export const SITE_NAME = "FourthDahn";
 export const SITE_DESCRIPTION =
-  "A read-only fantasy football co-manager for Sleeper dynasty leagues, combining league history, roster context, draft capital, and NFL statistics.";
+  "FourthDahn turns your dynasty league's history and data into context for better fantasy decisions. Know your league. Make the call.";
 
 const configuredUrl =
   process.env.NEXT_PUBLIC_SITE_URL ??
-  process.env.RENDER_EXTERNAL_URL ??
-  "https://fourth-down-jzs0.onrender.com";
+  "https://fourthdahn.com";
 
 export const SITE_URL = configuredUrl.replace(/\/$/, "");

@@ -3,14 +3,14 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
-    "How Fourth Down AI handles public Sleeper and NFL data, including AI-assisted analysis.",
+    "How FourthDahn handles public Sleeper and NFL data, including AI-assisted analysis.",
   alternates: { canonical: "/privacy" },
   openGraph: {
     type: "article",
     url: "/privacy",
-    title: "Privacy Policy | Fourth Down AI",
+    title: "Privacy Policy | FourthDahn",
     description:
-      "How Fourth Down AI handles public Sleeper and NFL data, including AI-assisted analysis.",
+      "How FourthDahn handles public Sleeper and NFL data, including AI-assisted analysis.",
   },
 };
 
@@ -18,14 +18,14 @@ export default function PrivacyPolicy() {
   return (
     <main className="privacy-shell">
       <a className="privacy-back" href="/">
-        ← Back to Fourth Down AI
+        ← Back to FourthDahn
       </a>
 
       <header className="privacy-hero">
         <span>Privacy &amp; data use</span>
         <h1>Your league data stays public, read-only, and temporary.</h1>
         <p>
-          Fourth Down AI is a prototype that organizes information already
+          FourthDahn is a prototype that organizes information already
           available through Sleeper&apos;s public API. It does not ask for your
           Sleeper password, modify your league, or maintain a persistent
           database of Sleeper users, leagues, rosters, or transactions.
@@ -64,7 +64,7 @@ export default function PrivacyPolicy() {
         <section>
           <h2>1. Scope</h2>
           <p>
-            This policy explains how the Fourth Down AI prototype handles
+            This policy explains how the FourthDahn prototype handles
             information when you use the application. It applies to the
             prototype interface, its API, and the features that display public
             Sleeper fantasy-football information.
@@ -107,7 +107,7 @@ export default function PrivacyPolicy() {
             move players on your behalf.
           </p>
           <p>
-            Fourth Down AI also uses, and plans to expand its use of, artificial
+            FourthDahn also uses, and plans to expand its use of, artificial
             intelligence and machine-learning models to process public league
             information together with NFL statistical data. These systems may
             identify patterns and produce roster-decision support, player and
@@ -117,9 +117,9 @@ export default function PrivacyPolicy() {
           <p>
             When an AI-assisted feature is used, the information needed for the
             requested analysis may be supplied as input to a model operated by
-            Fourth Down AI or a model-service provider. Fourth Down AI does not
+            FourthDahn or a model-service provider. FourthDahn does not
             use Sleeper passwords or private messages for these features. Public
-            league data is not used to train a Fourth Down AI model unless this
+            league data is not used to train a FourthDahn model unless this
             policy is updated and users are given notice before that practice
             begins.
           </p>
@@ -160,7 +160,7 @@ export default function PrivacyPolicy() {
               <span role="cell">
                 Rosters, transactions, drafts, scores, standings, and league
                 settings are processed to display league features and generate
-                requested statistical or AI-assisted insights. Fourth Down AI
+                requested statistical or AI-assisted insights. FourthDahn
                 does not maintain a persistent league database.
               </span>
             </div>
@@ -195,7 +195,7 @@ export default function PrivacyPolicy() {
         <section>
           <h2>5. Storage and retention</h2>
           <p>
-            Fourth Down AI does not maintain a persistent application database
+            FourthDahn does not maintain a persistent application database
             containing Sleeper usernames, league data, roster data, or
             transaction history. Public API responses may be held temporarily
             in server memory to improve performance and reduce repeated calls
@@ -226,7 +226,7 @@ export default function PrivacyPolicy() {
             Like most internet services, the hosting or networking provider may
             create limited operational logs such as request timestamps, IP
             addresses, requested URLs, response codes, and browser information
-            for security, reliability, and troubleshooting. Fourth Down AI does
+            for security, reliability, and troubleshooting. FourthDahn does
             not combine these logs with Sleeper league data to build user
             profiles. Provider handling of infrastructure logs is governed by
             the applicable provider&apos;s own privacy terms.
@@ -239,8 +239,8 @@ export default function PrivacyPolicy() {
             Sleeper supplies the public fantasy-football data displayed by the
             application. Player and team images may also be delivered from
             Sleeper-controlled content services. Sleeper&apos;s collection and use
-            of information is governed by Sleeper&apos;s own policies. Fourth Down
-            AI is an independent prototype and is not operated by or endorsed
+            of information is governed by Sleeper&apos;s own policies. FourthDahn
+            is an independent prototype and is not operated by or endorsed
             by Sleeper.
           </p>
           <p>
@@ -249,14 +249,14 @@ export default function PrivacyPolicy() {
             applicable feature. AI-assisted features may also rely on external
             model-service providers. Those providers process the limited data
             sent to them under their applicable terms, privacy policies, and
-            the service configuration selected by Fourth Down AI.
+            the service configuration selected by FourthDahn.
           </p>
         </section>
 
         <section>
           <h2>9. Data sharing</h2>
           <p>
-            Fourth Down AI does not sell, rent, or license Sleeper data. Public
+            FourthDahn does not sell, rent, or license Sleeper data. Public
             data is sent only where necessary to operate the requested feature,
             such as between the browser, this application&apos;s API, Sleeper&apos;s
             public API, NFL statistical-data sources, infrastructure providers,
@@ -282,7 +282,7 @@ export default function PrivacyPolicy() {
           <p>
             You can stop using the application at any time. Because the
             prototype does not maintain persistent Sleeper profiles, there is
-            no stored league account to delete from Fourth Down AI. You can
+            no stored league account to delete from FourthDahn. You can
             clear the local appearance preference through your browser&apos;s site
             data controls.
           </p>

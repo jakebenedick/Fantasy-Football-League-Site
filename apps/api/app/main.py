@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.api.routes import router
 
-app = FastAPI(title="Fantasy Co-Manager API", version="0.1.0")
+app = FastAPI(title="FourthDahn API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],

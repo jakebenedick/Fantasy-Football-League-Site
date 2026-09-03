@@ -13,9 +13,11 @@ export function AppHeader({
 }: AppHeaderProps) {
   return (
     <header className="topbar">
-      <button className="brand" onClick={onReset}>
+      <button className="brand" onClick={onReset} aria-label="FourthDahn home">
         <span className="brand-mark"><span className="brand-football" aria-hidden="true">🏈</span></span>
-        <span>Fourth Down<span className="brand-dot">AI</span></span>
+        <span className="brand-wordmark">
+          <span>Fourth</span><strong>Dahn</strong>
+        </span>
       </button>
       <div className="top-actions">
         <span className="prototype">Prototype</span>
@@ -34,7 +36,7 @@ export function AppHeader({
               </div>
             )}
             <div className="setting-row">
-              <div><strong>Appearance</strong><small>Choose how Fourth Down looks.</small></div>
+              <div><strong>Appearance</strong><small>Choose how FourthDahn looks.</small></div>
               <div className="theme-options" aria-label="Color theme">
                 <button className={theme === "light" ? "active" : ""} onClick={() => onThemeChange("light")} aria-pressed={theme === "light"}><span aria-hidden="true">☀</span> Light</button>
                 <button className={theme === "dark" ? "active" : ""} onClick={() => onThemeChange("dark")} aria-pressed={theme === "dark"}><span aria-hidden="true">☾</span> Dark</button>

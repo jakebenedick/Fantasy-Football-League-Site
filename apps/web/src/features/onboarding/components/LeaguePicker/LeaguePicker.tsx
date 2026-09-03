@@ -22,7 +22,7 @@ export function LeaguePicker({
         <button className="back loader-back" onClick={onBack}>
           ← Use another account
         </button>
-        <span className="kicker">Setting up Fourth Down</span>
+        <span className="kicker">Setting up FourthDahn</span>
         <h1>Choose your league</h1>
         <p>
           {username} · {season} season · {leagues.length}{" "}

@@ -16,22 +16,23 @@ export function WelcomeScreen({
     <section className="welcome">
       <div className="hero-copy">
         <span className="kicker">
-          <span className="live-dot" /> Your smarter sideline
+          <span className="live-dot" /> Your dynasty league, in context
         </span>
         <h1>
-          Make every lineup
+          Know your league.
           <br />
-          <em>your best lineup.</em>
+          <em>Make the call.</em>
         </h1>
         <p>
-          Connect your Sleeper account and get a clear view of your leagues,
-          roster, and the decisions ahead.
+          Your dynasty league is more than today&apos;s standings. Connect your
+          Sleeper league to explore its history, understand the competition,
+          and get more context for the decisions ahead.
         </p>
       </div>
       <form className="connect-card" onSubmit={onSubmit}>
         <div>
           <span className="step">01</span>
-          <h2>Find your team</h2>
+          <h2>Connect your league</h2>
           <p>Enter your public Sleeper username. No password needed.</p>
         </div>
         <label>
@@ -72,11 +73,11 @@ export function WelcomeScreen({
             </>
           ) : (
             <>
-              Continue <Icon name="arrow" />
+              Connect with Sleeper <Icon name="arrow" />
             </>
           )}
         </button>
-        <small>We only access publicly available, read-only league data.</small>
+        <small>Read-only. Your team stays in your hands.</small>
       </form>
     </section>
   );

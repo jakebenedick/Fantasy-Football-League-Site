@@ -21,6 +21,12 @@ describe("WelcomeScreen", () => {
       />
     );
 
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      /Know your league\.Make the call\./
+    );
+    expect(
+      screen.getByText("Read-only. Your team stays in your hands.")
+    ).toBeInTheDocument();
     const input = screen.getByLabelText("Sleeper username");
     await user.type(input, "jake");
     expect(onUsernameChange).toHaveBeenCalled();

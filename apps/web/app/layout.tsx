@@ -19,12 +19,13 @@ import "./theme.css";
 import "./privacy.css";
 import "./scoring.css";
 import "./loading.css";
+import "./branding.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   applicationName: SITE_NAME,
   title: {
-    default: `${SITE_NAME} | Fantasy Football Co-Manager`,
+    default: `${SITE_NAME} | Know Your League. Make the Call.`,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
@@ -38,12 +39,12 @@ export const metadata: Metadata = {
     type: "website",
     url: "/",
     siteName: SITE_NAME,
-    title: `${SITE_NAME} | Fantasy Football Co-Manager`,
+    title: `${SITE_NAME} | Know Your League. Make the Call.`,
     description: SITE_DESCRIPTION,
   },
   twitter: {
     card: "summary",
-    title: `${SITE_NAME} | Fantasy Football Co-Manager`,
+    title: `${SITE_NAME} | Know Your League. Make the Call.`,
     description: SITE_DESCRIPTION,
   },
 };

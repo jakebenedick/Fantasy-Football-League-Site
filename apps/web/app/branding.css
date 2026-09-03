@@ -1,0 +1,65 @@
+.brand-mark {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  box-shadow: 0 7px 18px rgba(10, 101, 68, 0.2);
+}
+
+.brand-mark::after {
+  position: absolute;
+  inset: -14px auto -14px 50%;
+  z-index: -1;
+  width: 2px;
+  content: "";
+  background: rgba(255, 255, 255, 0.18);
+  transform: rotate(28deg);
+}
+
+.brand-football {
+  display: inline-block;
+  font-size: 20px;
+  filter: saturate(0.92);
+  transform: rotate(-7deg);
+}
+
+.brand-wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  letter-spacing: -0.035em;
+}
+
+.brand-wordmark strong {
+  color: var(--green);
+  font: inherit;
+}
+
+.hero-copy h1 em::after {
+  position: absolute;
+  right: 0;
+  bottom: -9px;
+  left: 0;
+  height: 5px;
+  border-radius: 99px;
+  content: "";
+  background: linear-gradient(90deg, var(--lime), transparent 92%);
+  opacity: 0.8;
+}
+
+.connect-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.connect-card::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  content: "";
+  background: linear-gradient(90deg, var(--green), var(--lime));
+}
+
+@media (max-width: 560px) {
+  .brand-wordmark {
+    font-size: 17px;
+  }
+}

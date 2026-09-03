@@ -6,7 +6,9 @@ export function useTheme() {
   const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
-    const savedTheme = window.localStorage.getItem("fourth-down-theme");
+    const savedTheme =
+      window.localStorage.getItem("fourthdahn-theme") ??
+      window.localStorage.getItem("fourth-down-theme");
     const initialTheme: Theme =
       savedTheme === "light" || savedTheme === "dark"
         ? savedTheme
@@ -20,7 +22,7 @@ export function useTheme() {
   function chooseTheme(nextTheme: Theme) {
     setTheme(nextTheme);
     document.documentElement.dataset.theme = nextTheme;
-    window.localStorage.setItem("fourth-down-theme", nextTheme);
+    window.localStorage.setItem("fourthdahn-theme", nextTheme);
   }
 
   return { theme, chooseTheme };

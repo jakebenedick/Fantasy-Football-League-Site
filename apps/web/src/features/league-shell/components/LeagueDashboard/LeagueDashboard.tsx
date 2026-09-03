@@ -344,17 +344,17 @@ export function LeagueDashboard({
             <aside className="side-stack">
               {isMyTeam && (
                 <section className="panel recommendation">
-                  <span className="eyebrow">Co-manager</span>
-                  <h2>Lineup analysis</h2>
+                  <span className="eyebrow">In development</span>
+                  <h2>The Read</h2>
                   <div className="coming-icon">
                     <Icon name="ball" />
                   </div>
-                  <h3>Recommendation engine is warming up</h3>
+                  <h3>A co-manager that knows your league</h3>
                   <p>
-                    Your league and roster are connected. Player projections and
-                    lineup recommendations are the next feature.
+                    FourthDahn is being built to combine your league context
+                    with projections and explainable decision support.
                   </p>
-                  <span className="soon">Coming next</span>
+                  <span className="soon">Coming soon</span>
                 </section>
               )}{" "}
               {!isMyTeam && (
