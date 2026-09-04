@@ -1,9 +1,11 @@
 import asyncio
+import logging
 from datetime import datetime, timezone
 from typing import Any
 
 import polars as pl
 
+from app.core.config import get_settings
 from app.domain.models import (
     LeagueScoringAudit,
     PlayerScoringAudit,
@@ -15,6 +17,10 @@ from app.domain.models import (
     StatisticDefinition,
 )
 from app.integrations.sleeper.client import SleeperClient
+from app.repositories import NflStatsRepository
+
+
+logger = logging.getLogger(__name__)
 
 
 class NflverseUnavailableError(Exception):
@@ -287,6 +293,8 @@ _defense_rows_by_season: dict[int, list[dict[str, Any]]] = {}
 _special_team_player_rows_by_season: dict[int, list[dict[str, Any]]] = {}
 _player_rows_by_season: dict[tuple[int, str], list[dict[str, Any]]] = {}
 _data_lock = asyncio.Lock()
+_season_import_locks: dict[int, asyncio.Lock] = {}
+_nfl_stats_repository = NflStatsRepository(get_settings().database_url)
 _player_history_lock = asyncio.Lock()
 
 
@@ -534,7 +542,7 @@ async def _load_public_data(
 
 
 async def _load_player_rows(season: int, gsis_id: str) -> list[dict[str, Any]]:
-    """Load only one player's weekly rows, avoiding a career-sized all-player cache."""
+    """Read indexed PostgreSQL rows, importing an nflverse season once if needed."""
     key = (season, gsis_id)
     if key in _player_rows_by_season:
         return _player_rows_by_season[key]
@@ -543,7 +551,7 @@ async def _load_player_rows(season: int, gsis_id: str) -> list[dict[str, Any]]:
         f"stats_player/stats_player_week_{season}.parquet"
     )
 
-    def read_rows() -> list[dict[str, Any]]:
+    def requested_columns(schema: dict[str, Any]) -> list[str]:
         requested_columns = {
             "season_type", "week", "player_id", "position", "game_id",
             "target_share", "air_yards_share",
@@ -552,8 +560,11 @@ async def _load_player_rows(season: int, gsis_id: str) -> list[dict[str, Any]]:
             *(column for column, _, _ in BONUS_RULES.values()),
             *(column for column, _, _, _ in EXTRA_TOTAL_STATS.values()),
         }
+        return sorted(requested_columns.intersection(schema))
+
+    def read_rows() -> list[dict[str, Any]]:
         schema = pl.read_parquet_schema(url)
-        columns = sorted(requested_columns.intersection(schema))
+        columns = requested_columns(schema)
         return (
             pl.scan_parquet(url)
             .filter(pl.col("player_id") == gsis_id)
@@ -562,12 +573,40 @@ async def _load_player_rows(season: int, gsis_id: str) -> list[dict[str, Any]]:
             .to_dicts()
         )
 
+    def read_season() -> list[dict[str, Any]]:
+        schema = pl.read_parquet_schema(url)
+        columns = requested_columns(schema)
+        return pl.read_parquet(url, columns=columns).to_dicts()
+
     try:
+        if _nfl_stats_repository.configured:
+            season_lock = _season_import_locks.setdefault(season, asyncio.Lock())
+            async with season_lock:
+                if not await _nfl_stats_repository.season_is_imported(season):
+                    season_rows = await asyncio.to_thread(read_season)
+                    await _nfl_stats_repository.replace_season(season, season_rows, url)
+                rows = await _nfl_stats_repository.player_rows(season, gsis_id)
+            async with _player_history_lock:
+                _player_rows_by_season.setdefault(key, rows)
+                return _player_rows_by_season[key]
         rows = await asyncio.to_thread(read_rows)
     except Exception as exc:
-        raise NflverseUnavailableError(
-            f"Public NFL statistics for {season} are temporarily unavailable"
-        ) from exc
+        if _nfl_stats_repository.configured:
+            logger.warning(
+                "PostgreSQL NFL-stat lookup failed for season %s; using nflverse directly",
+                season,
+                exc_info=exc,
+            )
+            try:
+                rows = await asyncio.to_thread(read_rows)
+            except Exception as fallback_exc:
+                raise NflverseUnavailableError(
+                    f"Public NFL statistics for {season} are temporarily unavailable"
+                ) from fallback_exc
+        else:
+            raise NflverseUnavailableError(
+                f"Public NFL statistics for {season} are temporarily unavailable"
+            ) from exc
     async with _player_history_lock:
         _player_rows_by_season.setdefault(key, rows)
         return _player_rows_by_season[key]
@@ -944,6 +983,28 @@ async def _load_defense_data(season: int) -> list[dict[str, Any]]:
 class LeagueScoringAuditService:
     def __init__(self, client: SleeperClient) -> None:
         self._client = client
+
+    async def warm_player_history(
+        self,
+        *,
+        start_season: int,
+        end_season: int,
+    ) -> dict[str, Any]:
+        """Import public nflverse seasons once so career reads become indexed lookups."""
+        if not _nfl_stats_repository.configured:
+            return {"database_configured": False, "seasons": []}
+        if start_season > end_season:
+            start_season, end_season = end_season, start_season
+        seasons = list(range(start_season, end_season + 1))
+        semaphore = asyncio.Semaphore(2)
+
+        async def warm(season: int) -> int:
+            async with semaphore:
+                await _load_player_rows(season, "__fourth_dahn_warmup__")
+                return season
+
+        imported = await asyncio.gather(*(warm(season) for season in seasons))
+        return {"database_configured": True, "seasons": imported}
 
     async def get_player_history(
         self,

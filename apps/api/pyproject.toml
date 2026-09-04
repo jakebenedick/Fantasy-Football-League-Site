@@ -10,6 +10,7 @@ dependencies = [
     "httpx>=0.27,<1",
     "nflreadpy>=0.1.5,<0.2",
     "polars>=1,<2",
+    "psycopg[binary]>=3.2,<4",
     "pydantic-settings>=2.6,<3",
     "uvicorn[standard]>=0.32,<1",
 ]

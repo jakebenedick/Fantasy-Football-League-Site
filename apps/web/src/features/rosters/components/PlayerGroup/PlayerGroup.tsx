@@ -17,6 +17,7 @@ export function PlayerGroup({
   accent = false,
   leagueId,
   leagueSeason,
+  initialStatistics = null,
 }: PlayerGroupProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [animationParent] = useAutoAnimate<HTMLDivElement>();
@@ -37,7 +38,6 @@ export function PlayerGroup({
   const [detailTab, setDetailTab] = useState<"statistics" | "transactions">(
     "statistics"
   );
-  const [loading, setLoading] = useState(false);
   async function inspect(id: string) {
     if (selectedId === id) {
       setSelectedId(null);
@@ -47,10 +47,17 @@ export function PlayerGroup({
       return;
     }
     setSelectedId(id);
-    setLoading(true);
     setHistory(null);
-    setStatistics(null);
-    setStatisticsBySeason({});
+    const initializedStatistics =
+      initialStatistics?.season === defaultStatisticsSeason
+        ? initialStatistics
+        : null;
+    setStatistics(initializedStatistics);
+    setStatisticsBySeason(
+      initializedStatistics
+        ? { [defaultStatisticsSeason]: initializedStatistics }
+        : {}
+    );
     setSelectedStatisticsSeason(defaultStatisticsSeason);
     setStatisticsError("");
     setDetailTab("statistics");
@@ -72,27 +79,32 @@ export function PlayerGroup({
         }
       })
       .catch(() => undefined);
-    try {
-      const [playerHistory, leagueStatistics] = await Promise.all([
-        getJson<PlayerHistory>(
-          `/api/v1/sleeper/leagues/${leagueId}/player-history/${id}`
-        ),
-        getJson<ScoringAudit>(
+    const historyRequest = getJson<PlayerHistory>(
+      `/api/v1/sleeper/leagues/${leagueId}/player-history/${id}`
+    )
+      .then(setHistory)
+      .catch(() => setHistory(null))
+      .finally(() => undefined);
+
+    if (!initializedStatistics) {
+      setStatisticsLoading(true);
+      try {
+        const leagueStatistics = await getJson<ScoringAudit>(
           `/api/v1/sleeper/leagues/${leagueId}/statistics?season=${defaultStatisticsSeason}`
-        ),
-      ]);
-      setHistory(playerHistory);
-      setStatistics(leagueStatistics);
-      setStatisticsBySeason({
-        [defaultStatisticsSeason]: leagueStatistics,
-      });
-    } catch (reason) {
-      setStatisticsError(
-        reason instanceof Error ? reason.message : "Unable to load player details."
-      );
-    } finally {
-      setLoading(false);
+        );
+        setStatistics(leagueStatistics);
+        setStatisticsBySeason({
+          [defaultStatisticsSeason]: leagueStatistics,
+        });
+      } catch (reason) {
+        setStatisticsError(
+          reason instanceof Error ? reason.message : "Unable to load player statistics."
+        );
+      } finally {
+        setStatisticsLoading(false);
+      }
     }
+    await historyRequest;
   }
 
   async function selectStatisticsSeason(season: number) {
@@ -200,11 +212,7 @@ export function PlayerGroup({
                     </small>
                   </span>
                 </button>
-                {expanded && loading && (
-                  <p className="loading-copy">Tracing player history…</p>
-                )}
                 {expanded &&
-                  history &&
                   statistics &&
                   (() => {
                     const playerStatistics = statistics.players.find(

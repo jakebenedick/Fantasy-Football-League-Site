@@ -2,15 +2,20 @@ import { useEffect, useState } from "react";
 import { LEAGUE_SETUP_STEPS } from "../../constants";
 import type { LeagueLoadingScreenProps } from "./types";
 
-export function LeagueLoadingScreen({ league }: LeagueLoadingScreenProps) {
-  const [activeStep, setActiveStep] = useState(1);
+export function LeagueLoadingScreen({
+  league,
+  activeStep: controlledStep,
+}: LeagueLoadingScreenProps) {
+  const [animatedStep, setAnimatedStep] = useState(1);
+  const activeStep = controlledStep ?? animatedStep;
 
   useEffect(() => {
+    if (controlledStep !== undefined) return;
     const timer = window.setInterval(() => {
-      setActiveStep((current) => Math.min(current + 1, LEAGUE_SETUP_STEPS.length - 1));
+      setAnimatedStep((current) => Math.min(current + 1, LEAGUE_SETUP_STEPS.length - 1));
     }, 1350);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [controlledStep]);
 
   return (
     <section className="league-loader" aria-live="polite" aria-busy="true">

@@ -316,6 +316,7 @@ export function LeagueDashboard({
                 accent
                 leagueId={context.league.league_id}
                 leagueSeason={Number(context.league.season)}
+                initialStatistics={preloadedStatistics}
               />
               <PlayerGroup
                 title="Bench"
@@ -325,6 +326,7 @@ export function LeagueDashboard({
                 filter={rosterSlotFilter}
                 leagueId={context.league.league_id}
                 leagueSeason={Number(context.league.season)}
+                initialStatistics={preloadedStatistics}
               />
               {roster.taxi.length > 0 && (
                 <PlayerGroup
@@ -337,6 +339,7 @@ export function LeagueDashboard({
                   filter={rosterSlotFilter}
                   leagueId={context.league.league_id}
                   leagueSeason={Number(context.league.season)}
+                  initialStatistics={preloadedStatistics}
                 />
               )}{" "}
               {roster.reserve.length > 0 && (
@@ -348,6 +351,7 @@ export function LeagueDashboard({
                   filter={rosterSlotFilter}
                   leagueId={context.league.league_id}
                   leagueSeason={Number(context.league.season)}
+                  initialStatistics={preloadedStatistics}
                 />
               )}
             </section>

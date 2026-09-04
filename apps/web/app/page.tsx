@@ -31,6 +31,7 @@ export default function Home() {
   const [preloadedStatistics, setPreloadedStatistics] =
     useState<ScoringAudit | null>(null);
   const [selectedLeague, setSelectedLeague] = useState<League | null>(null);
+  const [loadingStep, setLoadingStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { theme, chooseTheme } = useTheme();
@@ -61,6 +62,7 @@ export default function Home() {
     setSelectedLeague(league);
     setPreloadedStatistics(null);
     setStage("loading");
+    setLoadingStep(1);
     setLoading(true);
     setError("");
     try {
@@ -70,6 +72,7 @@ export default function Home() {
         }`
       );
       setContext(nextContext);
+      setLoadingStep(4);
 
       // Statistics are part of league setup, not a deferred enhancement. Keep
       // the setup screen active until the default view is ready so users never
@@ -79,6 +82,12 @@ export default function Home() {
         `/api/v1/sleeper/leagues/${league.league_id}/statistics?season=${defaultStatsSeason}`
       );
       setPreloadedStatistics(nextStatistics);
+      // On PostgreSQL-backed deployments this imports each public nflverse
+      // season once. Later player-card requests become indexed database reads.
+      await getJson<{ database_configured: boolean; seasons: number[] }>(
+        `/api/v1/sleeper/nfl-statistics/warm?start_season=2008&end_season=${defaultStatsSeason}`
+      );
+      setLoadingStep(5);
       setStage("dashboard");
     } catch (e) {
       setStage("leagues");
@@ -138,7 +147,7 @@ export default function Home() {
           />
         )}
         {stage === "loading" && selectedLeague && (
-          <LeagueLoadingScreen league={selectedLeague} />
+          <LeagueLoadingScreen league={selectedLeague} activeStep={loadingStep} />
         )}
         {stage === "dashboard" && context && (
           <LeagueDashboard

@@ -12,3 +12,13 @@ services:
         value: https://api.sleeper.app/v1
       - key: SLEEPER_TIMEOUT_SECONDS
         value: "20"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fourth-dahn-stats
+          property: connectionString
+
+databases:
+  - name: fourth-dahn-stats
+    plan: free
+    databaseName: fourth_dahn_stats
+    user: fourth_dahn

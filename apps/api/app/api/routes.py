@@ -194,3 +194,18 @@ async def get_player_statistics_history(
         raise HTTPException(503, str(exc)) from exc
     except (SleeperNotFoundError, SleeperPayloadError, SleeperUnavailableError) as exc:
         raise error(exc) from exc
+
+
+@router.get("/nfl-statistics/warm")
+async def warm_nfl_statistics(
+    client: Client,
+    start_season: Annotated[int, Query(ge=1999, le=2100)] = 2008,
+    end_season: Annotated[int | None, Query(ge=1999, le=2100)] = None,
+) -> dict[str, object]:
+    try:
+        return await LeagueScoringAuditService(client).warm_player_history(
+            start_season=start_season,
+            end_season=end_season or datetime.now().year - 1,
+        )
+    except NflverseUnavailableError as exc:
+        raise HTTPException(503, str(exc)) from exc

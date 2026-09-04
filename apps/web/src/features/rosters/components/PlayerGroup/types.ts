@@ -1,4 +1,5 @@
 import type { Player } from "../../types";
+import type { ScoringAudit } from "@/features/statistics";
 
 export type PlayerGroupProps = {
   title: string;
@@ -9,4 +10,5 @@ export type PlayerGroupProps = {
   accent?: boolean;
   leagueId: string;
   leagueSeason: number;
+  initialStatistics?: ScoringAudit | null;
 };
