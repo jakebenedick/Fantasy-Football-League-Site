@@ -2,6 +2,8 @@
 import { useState } from "react";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { PlayerStatisticsCard, type ScoringAudit } from "@/features/statistics";
+import type { PlayerTrendHistory } from "@/features/statistics/components/PlayerPerformanceChart";
+import { getPlayerTrendHistory } from "@/features/statistics/services";
 import type { PlayerHistory } from "@/features/transactions";
 import { getJson } from "@/services";
 import { playerMatchesRosterSlot } from "../../utils";
@@ -20,6 +22,18 @@ export function PlayerGroup({
   const [animationParent] = useAutoAnimate<HTMLDivElement>();
   const [history, setHistory] = useState<PlayerHistory | null>(null);
   const [statistics, setStatistics] = useState<ScoringAudit | null>(null);
+  const [statisticsBySeason, setStatisticsBySeason] = useState<
+    Record<number, ScoringAudit>
+  >({});
+  const [trendHistoryByPlayer, setTrendHistoryByPlayer] = useState<
+    Record<string, PlayerTrendHistory>
+  >({});
+  const defaultStatisticsSeason = Math.max(2008, leagueSeason - 1);
+  const [selectedStatisticsSeason, setSelectedStatisticsSeason] = useState(
+    defaultStatisticsSeason
+  );
+  const [statisticsLoading, setStatisticsLoading] = useState(false);
+  const [statisticsError, setStatisticsError] = useState("");
   const [detailTab, setDetailTab] = useState<"statistics" | "transactions">(
     "statistics"
   );
@@ -29,27 +43,83 @@ export function PlayerGroup({
       setSelectedId(null);
       setHistory(null);
       setStatistics(null);
+      setStatisticsBySeason({});
       return;
     }
     setSelectedId(id);
     setLoading(true);
     setHistory(null);
     setStatistics(null);
+    setStatisticsBySeason({});
+    setSelectedStatisticsSeason(defaultStatisticsSeason);
+    setStatisticsError("");
     setDetailTab("statistics");
+    getPlayerTrendHistory(leagueId, id, defaultStatisticsSeason)
+      .then((trendHistory) => {
+        setTrendHistoryByPlayer((current) => ({ ...current, [id]: trendHistory }));
+        const activeSeasons = Array.from(
+          new Set(
+            trendHistory.points
+              .filter((point) => point.week === null)
+              .map((point) => point.season)
+          )
+        ).sort((left, right) => right - left);
+        if (
+          activeSeasons.length &&
+          !activeSeasons.includes(defaultStatisticsSeason)
+        ) {
+          void selectStatisticsSeason(activeSeasons[0]);
+        }
+      })
+      .catch(() => undefined);
     try {
-      const season = Math.max(1999, leagueSeason - 1);
       const [playerHistory, leagueStatistics] = await Promise.all([
         getJson<PlayerHistory>(
           `/api/v1/sleeper/leagues/${leagueId}/player-history/${id}`
         ),
         getJson<ScoringAudit>(
-          `/api/v1/sleeper/leagues/${leagueId}/statistics?season=${season}`
+          `/api/v1/sleeper/leagues/${leagueId}/statistics?season=${defaultStatisticsSeason}`
         ),
       ]);
       setHistory(playerHistory);
       setStatistics(leagueStatistics);
+      setStatisticsBySeason({
+        [defaultStatisticsSeason]: leagueStatistics,
+      });
+    } catch (reason) {
+      setStatisticsError(
+        reason instanceof Error ? reason.message : "Unable to load player details."
+      );
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function selectStatisticsSeason(season: number) {
+    setSelectedStatisticsSeason(season);
+    setStatisticsError("");
+    const cachedStatistics = statisticsBySeason[season];
+    if (cachedStatistics) {
+      setStatistics(cachedStatistics);
+      return;
+    }
+    setStatisticsLoading(true);
+    try {
+      const leagueStatistics = await getJson<ScoringAudit>(
+        `/api/v1/sleeper/leagues/${leagueId}/statistics?season=${season}`
+      );
+      setStatistics(leagueStatistics);
+      setStatisticsBySeason((current) => ({
+        ...current,
+        [season]: leagueStatistics,
+      }));
+    } catch (reason) {
+      setSelectedStatisticsSeason(statistics?.season ?? defaultStatisticsSeason);
+      setStatisticsError(
+        reason instanceof Error ? reason.message : "Unable to load that season."
+      );
+    } finally {
+      setStatisticsLoading(false);
     }
   }
   return (
@@ -64,6 +134,16 @@ export function PlayerGroup({
             const player = catalog[id];
             const availability = player?.injury_status ?? player?.status;
             const expanded = selectedId === id;
+            const trendHistory = trendHistoryByPlayer[id];
+            const statisticsSeasons = trendHistory
+              ? Array.from(
+                  new Set(
+                    trendHistory.points
+                      .filter((point) => point.week === null)
+                      .map((point) => point.season)
+                  )
+                ).sort((left, right) => right - left)
+              : [defaultStatisticsSeason];
             const highlighted = playerMatchesRosterSlot(player, filter, group);
             const ogDescription = player?.is_og
               ? `OG · Drafted here in ${player.og_drafted_season}${
@@ -138,6 +218,12 @@ export function PlayerGroup({
                         tab={detailTab}
                         onTabChange={setDetailTab}
                         history={history}
+                        availableSeasons={statisticsSeasons}
+                        selectedSeason={selectedStatisticsSeason}
+                        seasonLoading={statisticsLoading}
+                        onSeasonChange={selectStatisticsSeason}
+                        leagueId={leagueId}
+                        trendHistory={trendHistory ?? null}
                       />
                     ) : (
                       <p className="loading-copy">
@@ -145,6 +231,11 @@ export function PlayerGroup({
                       </p>
                     );
                   })()}
+                {expanded && statisticsError && (
+                  <p className="loading-copy player-stat-error">
+                    {statisticsError}
+                  </p>
+                )}
               </div>
             );
           })}

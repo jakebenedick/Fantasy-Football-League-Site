@@ -12,6 +12,7 @@ from app.domain.models import (
     PickHistory,
     Player,
     PlayerHistory,
+    PlayerTrendHistory,
     TeamHistory,
     User,
 )
@@ -154,9 +155,41 @@ async def get_scoring_audit(
     client: Client,
     season: Annotated[int, Query(ge=1999, le=2100)],
     week: Annotated[int | None, Query(ge=1, le=22)] = None,
+    player_id: Annotated[str | None, Query(min_length=1, max_length=50)] = None,
 ) -> LeagueScoringAudit:
     try:
-        return await LeagueScoringAuditService(client).get_audit(league_id, season, week)
+        audit = await LeagueScoringAuditService(client).get_audit(league_id, season, week)
+        if player_id is not None:
+            audit.players = [
+                player
+                for player in audit.players
+                if player.sleeper_player_id == player_id
+            ]
+        return audit
+    except NflverseUnavailableError as exc:
+        raise HTTPException(503, str(exc)) from exc
+    except (SleeperNotFoundError, SleeperPayloadError, SleeperUnavailableError) as exc:
+        raise error(exc) from exc
+
+
+@router.get(
+    "/leagues/{league_id}/players/{player_id}/statistics-history",
+    response_model=PlayerTrendHistory,
+)
+async def get_player_statistics_history(
+    league_id: str,
+    player_id: str,
+    client: Client,
+    start_season: Annotated[int, Query(ge=1999, le=2100)] = 2008,
+    end_season: Annotated[int | None, Query(ge=1999, le=2100)] = None,
+) -> PlayerTrendHistory:
+    try:
+        return await LeagueScoringAuditService(client).get_player_history(
+            league_id,
+            player_id,
+            start_season=start_season,
+            end_season=end_season or datetime.now().year - 1,
+        )
     except NflverseUnavailableError as exc:
         raise HTTPException(503, str(exc)) from exc
     except (SleeperNotFoundError, SleeperPayloadError, SleeperUnavailableError) as exc:

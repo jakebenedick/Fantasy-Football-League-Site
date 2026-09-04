@@ -279,6 +279,23 @@ class LeagueScoringAudit(BaseModel):
     source: SourceMetadata
 
 
+class PlayerTrendPoint(BaseModel):
+    season: int
+    week: int | None = None
+    fantasy_points: float = 0
+    statistics: dict[str, float] = Field(default_factory=dict)
+
+
+class PlayerTrendHistory(BaseModel):
+    league_id: str
+    player_id: str
+    first_season: int | None = None
+    last_season: int | None = None
+    seasons_scanned: list[int] = Field(default_factory=list)
+    points: list[PlayerTrendPoint] = Field(default_factory=list)
+    source: SourceMetadata
+
+
 class LeagueContext(BaseModel):
     league: LeagueSummary
     selected_user: User

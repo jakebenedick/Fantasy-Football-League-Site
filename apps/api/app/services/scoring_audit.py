@@ -7,6 +7,8 @@ import polars as pl
 from app.domain.models import (
     LeagueScoringAudit,
     PlayerScoringAudit,
+    PlayerTrendHistory,
+    PlayerTrendPoint,
     PlayerValueOutlook,
     ScoringBreakdownItem,
     SourceMetadata,
@@ -283,7 +285,9 @@ _ranking_rows: list[dict[str, Any]] | None = None
 _stats_by_season: dict[int, list[dict[str, Any]]] = {}
 _defense_rows_by_season: dict[int, list[dict[str, Any]]] = {}
 _special_team_player_rows_by_season: dict[int, list[dict[str, Any]]] = {}
+_player_rows_by_season: dict[tuple[int, str], list[dict[str, Any]]] = {}
 _data_lock = asyncio.Lock()
+_player_history_lock = asyncio.Lock()
 
 
 def _number(value: Any) -> float:
@@ -527,6 +531,46 @@ async def _load_public_data(
                 "Public NFL scoring data is temporarily unavailable"
             ) from exc
     return _id_map, _stats_by_season[season]
+
+
+async def _load_player_rows(season: int, gsis_id: str) -> list[dict[str, Any]]:
+    """Load only one player's weekly rows, avoiding a career-sized all-player cache."""
+    key = (season, gsis_id)
+    if key in _player_rows_by_season:
+        return _player_rows_by_season[key]
+    url = (
+        "https://github.com/nflverse/nflverse-data/releases/download/"
+        f"stats_player/stats_player_week_{season}.parquet"
+    )
+
+    def read_rows() -> list[dict[str, Any]]:
+        requested_columns = {
+            "season_type", "week", "player_id", "position", "game_id",
+            "target_share", "air_yards_share",
+            *(column for column, _ in STAT_RULES.values()),
+            *(column for columns, _ in COMPOSITE_STAT_RULES.values() for column in columns),
+            *(column for column, _, _ in BONUS_RULES.values()),
+            *(column for column, _, _, _ in EXTRA_TOTAL_STATS.values()),
+        }
+        schema = pl.read_parquet_schema(url)
+        columns = sorted(requested_columns.intersection(schema))
+        return (
+            pl.scan_parquet(url)
+            .filter(pl.col("player_id") == gsis_id)
+            .select(columns)
+            .collect()
+            .to_dicts()
+        )
+
+    try:
+        rows = await asyncio.to_thread(read_rows)
+    except Exception as exc:
+        raise NflverseUnavailableError(
+            f"Public NFL statistics for {season} are temporarily unavailable"
+        ) from exc
+    async with _player_history_lock:
+        _player_rows_by_season.setdefault(key, rows)
+        return _player_rows_by_season[key]
 
 
 def _normalized_player_name(value: Any) -> str:
@@ -900,6 +944,87 @@ async def _load_defense_data(season: int) -> list[dict[str, Any]]:
 class LeagueScoringAuditService:
     def __init__(self, client: SleeperClient) -> None:
         self._client = client
+
+    async def get_player_history(
+        self,
+        league_id: str,
+        player_id: str,
+        *,
+        start_season: int,
+        end_season: int,
+    ) -> PlayerTrendHistory:
+        if start_season > end_season:
+            start_season, end_season = end_season, start_season
+        league = await self._client.get_league(league_id)
+        scoring = {
+            key: _number(value)
+            for key, value in league.scoring_settings.items()
+            if _number(value) != 0
+        }
+        id_map, _ = await _load_public_data(end_season)
+        mapped = id_map.get(player_id)
+        if not mapped:
+            return PlayerTrendHistory(
+                league_id=league_id,
+                player_id=player_id,
+                seasons_scanned=[],
+                points=[],
+                source=SourceMetadata(
+                    provider="nflverse + sleeper scoring settings",
+                    retrieved_at=datetime.now(timezone.utc),
+                ),
+            )
+
+        seasons = list(range(start_season, end_season + 1))
+        semaphore = asyncio.Semaphore(4)
+
+        async def load_season(season: int) -> tuple[int, list[dict[str, Any]]]:
+            async with semaphore:
+                return season, await _load_player_rows(season, mapped[0])
+
+        loaded = await asyncio.gather(*(load_season(season) for season in seasons))
+        points: list[PlayerTrendPoint] = []
+        active_seasons: list[int] = []
+        for season, rows in loaded:
+            regular_rows = [row for row in rows if row.get("season_type") == "REG"]
+            if not regular_rows:
+                continue
+            active_seasons.append(season)
+            season_points, _ = calculate_breakdown(regular_rows, scoring)
+            points.append(
+                PlayerTrendPoint(
+                    season=season,
+                    fantasy_points=season_points,
+                    statistics=aggregate_statistics(regular_rows),
+                )
+            )
+            rows_by_week: dict[int, list[dict[str, Any]]] = {}
+            for row in regular_rows:
+                week = int(_number(row.get("week")))
+                if week:
+                    rows_by_week.setdefault(week, []).append(row)
+            for week, weekly_rows in sorted(rows_by_week.items()):
+                fantasy_points, _ = calculate_breakdown(weekly_rows, scoring)
+                points.append(
+                    PlayerTrendPoint(
+                        season=season,
+                        week=week,
+                        fantasy_points=fantasy_points,
+                        statistics=aggregate_statistics(weekly_rows),
+                    )
+                )
+        return PlayerTrendHistory(
+            league_id=league_id,
+            player_id=player_id,
+            first_season=min(active_seasons) if active_seasons else None,
+            last_season=max(active_seasons) if active_seasons else None,
+            seasons_scanned=seasons,
+            points=points,
+            source=SourceMetadata(
+                provider="nflverse + sleeper scoring settings",
+                retrieved_at=datetime.now(timezone.utc),
+            ),
+        )
 
     async def get_audit(
         self, league_id: str, season: int, week: int | None = None

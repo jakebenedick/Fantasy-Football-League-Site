@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- Sleeper league and team avatars are CDN-sized. */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Icon } from "@/components/ui/Icon";
 import {
   LeagueHistoryView,
@@ -225,7 +225,17 @@ export function LeagueDashboard({
               </div>
               <span>{context.rosters.length} managers</span>
             </div>
-            <div className="team-tabs">
+            <div
+              className="team-tabs"
+              style={
+                {
+                  "--team-columns": Math.max(
+                    1,
+                    Math.ceil(context.rosters.length / 2)
+                  ),
+                } as CSSProperties
+              }
+            >
               {context.rosters.map((team) => {
                 const mine = team.owner_id === context.selected_user.user_id;
                 const wins = team.settings.wins ?? 0;

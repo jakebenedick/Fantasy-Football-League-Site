@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- player avatars are CDN-sized */
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { PlayerHistoryEvent } from "@/features/transactions";
+import { PlayerPerformanceChart } from "../PlayerPerformanceChart";
 import {
   RATE_STAT_KEYS,
   STAT_LABELS,
@@ -16,15 +17,36 @@ export function PlayerStatisticsCard({
   tab,
   onTabChange,
   history,
+  availableSeasons,
+  selectedSeason = season,
+  seasonLoading = false,
+  onSeasonChange,
+  leagueId,
+  trendHistory,
 }: PlayerStatisticsCardProps) {
   const [historyOrder, setHistoryOrder] = useState<"newest" | "oldest">(
     "newest"
   );
+  const [requestedChartMetric, setRequestedChartMetric] = useState<string>();
+  const [chartRequestToken, setChartRequestToken] = useState(0);
   const visibleStatistics = Object.entries(player.statistics)
     .filter(([key, value]) => value !== 0 && key in STAT_LABELS)
     .sort(([left], [right]) =>
       (STAT_LABELS[left] ?? left).localeCompare(STAT_LABELS[right] ?? right)
     );
+  const scoringTotal = player.breakdown.reduce(
+    (total, item) => total + item.points,
+    0
+  );
+
+  function showMetricTrend(metric: string) {
+    if (requestedChartMetric === metric) {
+      setRequestedChartMetric(undefined);
+      return;
+    }
+    setRequestedChartMetric(metric);
+    setChartRequestToken((current) => current + 1);
+  }
   return (
     <article className="player-stat-card">
       <header className="player-stat-hero">
@@ -38,6 +60,24 @@ export function PlayerStatisticsCard({
         <div className="player-stat-identity">
           <span>{player.manager_name}</span>
           <h3>{player.player_name}</h3>
+          {availableSeasons && onSeasonChange && (
+            <label className="player-stat-season">
+              <span>Season</span>
+              <select
+                aria-label={`Statistics season for ${player.player_name}`}
+                value={selectedSeason}
+                disabled={seasonLoading}
+                onChange={(event) => onSeasonChange(Number(event.target.value))}
+              >
+                {availableSeasons.map((availableSeason) => (
+                  <option value={availableSeason} key={availableSeason}>
+                    {availableSeason}
+                  </option>
+                ))}
+              </select>
+              {seasonLoading && <small>Loading…</small>}
+            </label>
+          )}
           <p>
             {player.position ?? "NFL"} · {season}
             {week ? ` Week ${week}` : " regular season"}
@@ -146,27 +186,52 @@ export function PlayerStatisticsCard({
               </dl>
             </section>
           )}
-          <div className="player-stat-content">
+          <div className={`player-stat-content ${requestedChartMetric ? "chart-active" : ""}`}>
             <div className="player-stat-grid">
               {visibleStatistics.map(([key, value]) => (
-                <div key={key}>
-                  <span>{STAT_LABELS[key]}</span>
-                  <strong>
-                    {formatMetric(
-                      value,
-                      key.endsWith("_pct") ||
-                        key.endsWith("_rate") ||
-                        key.endsWith("_share")
-                        ? "percent"
-                        : RATE_STAT_KEYS.has(key)
-                        ? "decimal"
-                        : undefined
-                    )}
-                  </strong>
-                </div>
+                <Fragment key={key}>
+                  <button
+                    className={`player-stat-metric ${
+                      requestedChartMetric === key ? "trend-selected" : ""
+                    }`}
+                    type="button"
+                    onClick={() => showMetricTrend(key)}
+                    aria-pressed={requestedChartMetric === key}
+                    aria-label={`${requestedChartMetric === key ? "Hide" : "View"} ${STAT_LABELS[key]} trend`}
+                  >
+                    <span>{STAT_LABELS[key]}</span>
+                    <strong>
+                      {formatMetric(
+                        value,
+                        key.endsWith("_pct") ||
+                          key.endsWith("_rate") ||
+                          key.endsWith("_share")
+                          ? "percent"
+                          : RATE_STAT_KEYS.has(key)
+                          ? "decimal"
+                          : undefined
+                      )}
+                    </strong>
+                    <small>{requestedChartMetric === key ? "Hide trend" : "View trend"}</small>
+                  </button>
+                  {requestedChartMetric === key && leagueId && availableSeasons && (
+                    <PlayerPerformanceChart
+                      leagueId={leagueId}
+                      playerId={player.sleeper_player_id}
+                      playerName={player.player_name}
+                      season={season}
+                      availableSeasons={availableSeasons}
+                      requestedMetric={requestedChartMetric}
+                      requestToken={chartRequestToken}
+                      embedded
+                      onClose={() => setRequestedChartMetric(undefined)}
+                      initialHistory={trendHistory}
+                    />
+                  )}
+                </Fragment>
               ))}
             </div>
-            <section className="fantasy-breakdown">
+            {!requestedChartMetric && <section className="fantasy-breakdown">
               <h4>League scoring breakdown</h4>
               {player.breakdown.map((item) => (
                 <div className="scoring-line" key={item.scoring_key}>
@@ -179,7 +244,11 @@ export function PlayerStatisticsCard({
                   <strong>{item.points.toFixed(2)} pts</strong>
                 </div>
               ))}
-            </section>
+              <div className="scoring-total">
+                <span>Total</span>
+                <strong>{scoringTotal.toFixed(2)} pts</strong>
+              </div>
+            </section>}
           </div>
         </>
       ) : history ? (
